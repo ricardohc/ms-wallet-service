@@ -46,9 +46,9 @@ springdoc:
 
 external:
   services:
-    account-base-url: ${ACCOUNT_SERVICE_URL:http://ms-account-service}
-    card-base-url: ${CARD_SERVICE_URL:http://ms-card-service}
-    transaction-base-url: ${TRANSACTION_SERVICE_URL:http://ms-transaction-service}
+    account-base-url: ${ACCOUNT_SERVICE_URL:http://localhost:8082}
+    card-base-url: ${CARD_SERVICE_URL:http://localhost:8084}
+    transaction-base-url: ${TRANSACTION_SERVICE_URL:http://localhost:8083}
 
 logging:
   level:

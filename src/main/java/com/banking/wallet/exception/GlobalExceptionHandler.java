@@ -13,10 +13,6 @@ import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.ServerWebInputException;
 import reactor.core.publisher.Mono;
 
-/**
- * Manejo global de errores. Mapea excepciones de dominio a los codigos HTTP
- * del contrato OpenAPI con estructura ErrorResponse comun.
- */
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
@@ -31,13 +27,6 @@ public class GlobalExceptionHandler {
                 exchange, details);
     }
 
-    /**
-     * Captura errores de conversion de parametros y de lectura del body:
-     *  - UUID invalido en header/path (X-Transaction-ID, walletId).
-     *  - JSON malformado o con tipos invalidos (UUID invalido en body,
-     *    campo con tipo incorrecto, etc).
-     * Mapea a 400 del contrato.
-     */
     @ExceptionHandler(ServerWebInputException.class)
     public Mono<ResponseEntity<ErrorResponse>> handleInput(
             ServerWebInputException ex, ServerWebExchange exchange) {
@@ -46,7 +35,6 @@ public class GlobalExceptionHandler {
         if (detail == null) {
             detail = "Invalid request parameter or body";
         }
-        // Recortar mensajes muy largos de Jackson
         if (detail.length() > 300) {
             detail = detail.substring(0, 300) + "...";
         }

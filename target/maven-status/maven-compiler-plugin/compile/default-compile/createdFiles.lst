@@ -9,6 +9,7 @@ com\banking\wallet\dto\WalletStatus.class
 com\banking\wallet\exception\WalletForbiddenException.class
 com\banking\wallet\service\impl\AccountBalanceClientImpl.class
 com\banking\wallet\mapper\WalletMapper.class
+com\banking\wallet\client\AccountValidationClient.class
 com\banking\wallet\dto\WalletCreateRequest.class
 com\banking\wallet\event\WalletEvent$WalletEventBuilder.class
 com\banking\wallet\api\WalletApi.class

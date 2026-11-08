@@ -4,9 +4,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
+import com.banking.wallet.client.AccountValidationClient;
 import com.banking.wallet.document.WalletDocument;
 import com.banking.wallet.dto.WalletCreateRequest;
-import com.banking.wallet.dto.WalletResponse;
 import com.banking.wallet.dto.WalletTransferRequest;
 import com.banking.wallet.exception.WalletConflictException;
 import com.banking.wallet.exception.WalletForbiddenException;
@@ -42,12 +42,16 @@ class WalletServiceImplTest {
     @Mock
     private AccountBalanceClient accountBalanceClient;
 
+    @Mock
+    private AccountValidationClient accountValidationClient;
+
     private WalletServiceImpl service;
 
     @BeforeEach
     void setUp() {
         service = new WalletServiceImpl(repository, new WalletMapper(),
-                eventPublisher, transactionServiceClient, accountBalanceClient);
+                eventPublisher, transactionServiceClient, accountBalanceClient,
+                accountValidationClient);
     }
 
     private WalletDocument doc(String status) {

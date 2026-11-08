@@ -1,5 +1,6 @@
 package com.banking.wallet.service.impl;
 
+import com.banking.wallet.client.AccountValidationClient;
 import com.banking.wallet.document.WalletDocument;
 import com.banking.wallet.dto.WalletCreateRequest;
 import com.banking.wallet.dto.WalletResponse;
@@ -43,6 +44,7 @@ public class WalletServiceImpl implements WalletService {
     private final WalletEventPublisher eventPublisher;
     private final TransactionServiceClient transactionServiceClient;
     private final AccountBalanceClient accountBalanceClient;
+    private final AccountValidationClient accountValidationClient;
 
     @Override
     public Mono<WalletResponse> create(WalletCreateRequest request, UUID transactionId) {
@@ -50,11 +52,11 @@ public class WalletServiceImpl implements WalletService {
                         request.getDocumentType().getValue(), request.getDocumentNumber())
                 .flatMap(exists -> exists
                         ? Mono.error(new WalletConflictException(
-                                "Wallet already exists for document"))
+                        "Wallet already exists for document"))
                         : repository.existsByPhoneNumber(request.getPhoneNumber()))
                 .flatMap(phoneExists -> phoneExists
                         ? Mono.error(new WalletConflictException(
-                                "Wallet already exists for phone number"))
+                        "Wallet already exists for phone number"))
                         : persistNewWallet(request, transactionId))
                 .onErrorResume(DuplicateKeyException.class,
                         e -> Mono.error(new WalletConflictException(
@@ -83,7 +85,7 @@ public class WalletServiceImpl implements WalletService {
 
     @Override
     public Mono<WalletResponse> update(UUID walletId, WalletUpdateRequest request,
-            UUID transactionId) {
+                                       UUID transactionId) {
         return repository.findByWalletUuid(walletId)
                 .switchIfEmpty(Mono.error(new WalletNotFoundException("Wallet not found")))
                 .flatMap(doc -> applyUpdate(doc, request))
@@ -94,9 +96,7 @@ public class WalletServiceImpl implements WalletService {
 
     private Mono<WalletDocument> applyUpdate(WalletDocument doc, WalletUpdateRequest request) {
         if (request.getLinkedDebitCardId() != null) {
-            // La tarjeta debe existir y estar ACTIVE en ms-card-service (validacion
-            // por API o evento). No se lee la base de Card.
-            return validateDebitCard(request.getLinkedDebitCardId())
+            return accountValidationClient.validateLinkableAccount(request.getLinkedDebitCardId())
                     .thenReturn(withLinkedCard(doc, request.getLinkedDebitCardId()));
         }
         if (request.getStatus() != null) {
@@ -105,16 +105,8 @@ public class WalletServiceImpl implements WalletService {
         return Mono.just(doc);
     }
 
-    private Mono<Void> validateDebitCard(UUID cardId) {
-        // TODO Parte II: validar ACTIVE en ms-card-service por API (timeout 2s);
-        // mientras no exista el cliente HTTP se considera valida.
-        log.debug("Validating debit card {} against ms-card-service", cardId);
-        return Mono.empty();
-    }
-
     private WalletDocument withLinkedCard(WalletDocument doc, UUID cardId) {
         doc.setLinkedDebitCardId(cardId);
-        // Representacion unica: con tarjeta vinculada el saldo local siempre 0.00.
         doc.setBalance(new BigDecimal("0.00"));
         return doc;
     }
@@ -132,7 +124,7 @@ public class WalletServiceImpl implements WalletService {
 
     @Override
     public Mono<UUID> transfer(WalletTransferRequest request, String authenticatedPhoneNumber,
-            UUID transactionId) {
+                               UUID transactionId) {
         if (authenticatedPhoneNumber == null || authenticatedPhoneNumber.isBlank()) {
             return Mono.error(new WalletForbiddenException(
                     "Authenticated identity missing; source wallet cannot be derived"));
@@ -149,7 +141,7 @@ public class WalletServiceImpl implements WalletService {
     }
 
     private Mono<UUID> delegateTransfer(WalletDocument source, WalletTransferRequest request,
-            UUID transactionId) {
+                                        UUID transactionId) {
         WalletTransferCommand command = WalletTransferCommand.builder()
                 .transactionId(transactionId)
                 .sourceWalletId(source.getWalletUuid())
@@ -168,7 +160,6 @@ public class WalletServiceImpl implements WalletService {
                         "Wallet not found for authenticated phone")))
                 .flatMap(doc -> {
                     if (doc.getLinkedDebitCardId() != null) {
-                        // Con tarjeta vinculada la fuente de verdad es ms-account-service.
                         return accountBalanceClient
                                 .getPrimaryAccountBalance(doc.getWalletUuid(),
                                         doc.getLinkedDebitCardId().toString(), null)
