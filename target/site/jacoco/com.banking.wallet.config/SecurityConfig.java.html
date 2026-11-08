@@ -2,20 +2,41 @@
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 
 @Configuration
 @EnableWebFluxSecurity
-<span class="nc" id="L11">public class SecurityConfig {</span>
+<span class="nc" id="L12">public class SecurityConfig {</span>
 
+    /**
+     * Perfil dev: permite todo, sin JWT. Útil para Postman/curl local
+     * mientras no exista un Identity Provider real (Keycloak/Okta).
+     * NUNCA usar en producción.
+     */
     @Bean
-    public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
-<span class="nc" id="L15">        return http</span>
-<span class="nc" id="L16">                .csrf(ServerHttpSecurity.CsrfSpec::disable)</span>
-<span class="nc" id="L17">                .authorizeExchange(exchanges -&gt; exchanges.anyExchange().permitAll())</span>
-<span class="nc" id="L18">                .build();</span>
+    @Profile(&quot;dev&quot;)
+    public SecurityWebFilterChain devSecurityWebFilterChain(ServerHttpSecurity http) {
+<span class="nc" id="L22">        return http</span>
+<span class="nc" id="L23">                .csrf(ServerHttpSecurity.CsrfSpec::disable)</span>
+<span class="nc" id="L24">                .authorizeExchange(exchanges -&gt; exchanges.anyExchange().permitAll())</span>
+<span class="nc" id="L25">                .build();</span>
+    }
+
+    /**
+     * Perfil no-dev: OAuth2 Resource Server con JWT real.
+     * El `phone_number` se toma del token emitido por el IdP.
+     */
+    @Bean
+    @Profile(&quot;!dev&quot;)
+    public SecurityWebFilterChain jwtSecurityWebFilterChain(ServerHttpSecurity http) {
+<span class="nc" id="L35">        return http</span>
+<span class="nc" id="L36">                .csrf(ServerHttpSecurity.CsrfSpec::disable)</span>
+<span class="nc" id="L37">                .authorizeExchange(exchanges -&gt; exchanges.anyExchange().authenticated())</span>
+<span class="nc" id="L38">                .oauth2ResourceServer(oauth2 -&gt; oauth2.jwt(jwt -&gt; { }))</span>
+<span class="nc" id="L39">                .build();</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

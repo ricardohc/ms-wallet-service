@@ -18,8 +18,10 @@ import jakarta.annotation.Generated;
  * WalletTransferRequest
  */
 
-@Generated(value = &quot;org.openapitools.codegen.languages.SpringCodegen&quot;, date = &quot;2026-11-08T17:28:25.351102900-05:00[America/Lima]&quot;, comments = &quot;Generator version: 7.6.0&quot;)
+@Generated(value = &quot;org.openapitools.codegen.languages.SpringCodegen&quot;, date = &quot;2026-11-08T18:08:46.498479-05:00[America/Lima]&quot;, comments = &quot;Generator version: 7.6.0&quot;)
 public class WalletTransferRequest {
+
+  private String sourcePhoneNumber;
 
   private String targetPhoneNumber;
 
@@ -28,21 +30,42 @@ public class WalletTransferRequest {
   private String currency;
 
   public WalletTransferRequest() {
-<span class="fc" id="L31">    super();</span>
-<span class="fc" id="L32">  }</span>
+<span class="fc" id="L33">    super();</span>
+<span class="fc" id="L34">  }</span>
 
   /**
    * Constructor with only required parameters
    */
-<span class="nc" id="L37">  public WalletTransferRequest(String targetPhoneNumber, String amount, String currency) {</span>
-<span class="nc" id="L38">    this.targetPhoneNumber = targetPhoneNumber;</span>
-<span class="nc" id="L39">    this.amount = amount;</span>
-<span class="nc" id="L40">    this.currency = currency;</span>
-<span class="nc" id="L41">  }</span>
+<span class="nc" id="L39">  public WalletTransferRequest(String sourcePhoneNumber, String targetPhoneNumber, String amount, String currency) {</span>
+<span class="nc" id="L40">    this.sourcePhoneNumber = sourcePhoneNumber;</span>
+<span class="nc" id="L41">    this.targetPhoneNumber = targetPhoneNumber;</span>
+<span class="nc" id="L42">    this.amount = amount;</span>
+<span class="nc" id="L43">    this.currency = currency;</span>
+<span class="nc" id="L44">  }</span>
+
+  public WalletTransferRequest sourcePhoneNumber(String sourcePhoneNumber) {
+<span class="nc" id="L47">    this.sourcePhoneNumber = sourcePhoneNumber;</span>
+<span class="nc" id="L48">    return this;</span>
+  }
+
+  /**
+   * Get sourcePhoneNumber
+   * @return sourcePhoneNumber
+  */
+  @NotNull @Pattern(regexp = &quot;^[0-9]{9,15}$&quot;) 
+  @Schema(name = &quot;sourcePhoneNumber&quot;, requiredMode = Schema.RequiredMode.REQUIRED)
+  @JsonProperty(&quot;sourcePhoneNumber&quot;)
+  public String getSourcePhoneNumber() {
+<span class="nc" id="L59">    return sourcePhoneNumber;</span>
+  }
+
+  public void setSourcePhoneNumber(String sourcePhoneNumber) {
+<span class="fc" id="L63">    this.sourcePhoneNumber = sourcePhoneNumber;</span>
+<span class="fc" id="L64">  }</span>
 
   public WalletTransferRequest targetPhoneNumber(String targetPhoneNumber) {
-<span class="nc" id="L44">    this.targetPhoneNumber = targetPhoneNumber;</span>
-<span class="nc" id="L45">    return this;</span>
+<span class="nc" id="L67">    this.targetPhoneNumber = targetPhoneNumber;</span>
+<span class="nc" id="L68">    return this;</span>
   }
 
   /**
@@ -53,16 +76,16 @@ public class WalletTransferRequest {
   @Schema(name = &quot;targetPhoneNumber&quot;, requiredMode = Schema.RequiredMode.REQUIRED)
   @JsonProperty(&quot;targetPhoneNumber&quot;)
   public String getTargetPhoneNumber() {
-<span class="fc" id="L56">    return targetPhoneNumber;</span>
+<span class="fc" id="L79">    return targetPhoneNumber;</span>
   }
 
   public void setTargetPhoneNumber(String targetPhoneNumber) {
-<span class="fc" id="L60">    this.targetPhoneNumber = targetPhoneNumber;</span>
-<span class="fc" id="L61">  }</span>
+<span class="fc" id="L83">    this.targetPhoneNumber = targetPhoneNumber;</span>
+<span class="fc" id="L84">  }</span>
 
   public WalletTransferRequest amount(String amount) {
-<span class="nc" id="L64">    this.amount = amount;</span>
-<span class="nc" id="L65">    return this;</span>
+<span class="nc" id="L87">    this.amount = amount;</span>
+<span class="nc" id="L88">    return this;</span>
   }
 
   /**
@@ -73,16 +96,16 @@ public class WalletTransferRequest {
   @Schema(name = &quot;amount&quot;, requiredMode = Schema.RequiredMode.REQUIRED)
   @JsonProperty(&quot;amount&quot;)
   public String getAmount() {
-<span class="fc" id="L76">    return amount;</span>
+<span class="fc" id="L99">    return amount;</span>
   }
 
   public void setAmount(String amount) {
-<span class="fc" id="L80">    this.amount = amount;</span>
-<span class="fc" id="L81">  }</span>
+<span class="fc" id="L103">    this.amount = amount;</span>
+<span class="fc" id="L104">  }</span>
 
   public WalletTransferRequest currency(String currency) {
-<span class="nc" id="L84">    this.currency = currency;</span>
-<span class="nc" id="L85">    return this;</span>
+<span class="nc" id="L107">    this.currency = currency;</span>
+<span class="nc" id="L108">    return this;</span>
   }
 
   /**
@@ -93,41 +116,43 @@ public class WalletTransferRequest {
   @Schema(name = &quot;currency&quot;, requiredMode = Schema.RequiredMode.REQUIRED)
   @JsonProperty(&quot;currency&quot;)
   public String getCurrency() {
-<span class="fc" id="L96">    return currency;</span>
+<span class="fc" id="L119">    return currency;</span>
   }
 
   public void setCurrency(String currency) {
-<span class="fc" id="L100">    this.currency = currency;</span>
-<span class="fc" id="L101">  }</span>
+<span class="fc" id="L123">    this.currency = currency;</span>
+<span class="fc" id="L124">  }</span>
 
   @Override
   public boolean equals(Object o) {
-<span class="nc bnc" id="L105" title="All 2 branches missed.">    if (this == o) {</span>
-<span class="nc" id="L106">      return true;</span>
+<span class="nc bnc" id="L128" title="All 2 branches missed.">    if (this == o) {</span>
+<span class="nc" id="L129">      return true;</span>
     }
-<span class="nc bnc" id="L108" title="All 4 branches missed.">    if (o == null || getClass() != o.getClass()) {</span>
-<span class="nc" id="L109">      return false;</span>
+<span class="nc bnc" id="L131" title="All 4 branches missed.">    if (o == null || getClass() != o.getClass()) {</span>
+<span class="nc" id="L132">      return false;</span>
     }
-<span class="nc" id="L111">    WalletTransferRequest walletTransferRequest = (WalletTransferRequest) o;</span>
-<span class="nc bnc" id="L112" title="All 2 branches missed.">    return Objects.equals(this.targetPhoneNumber, walletTransferRequest.targetPhoneNumber) &amp;&amp;</span>
-<span class="nc bnc" id="L113" title="All 2 branches missed.">        Objects.equals(this.amount, walletTransferRequest.amount) &amp;&amp;</span>
-<span class="nc bnc" id="L114" title="All 2 branches missed.">        Objects.equals(this.currency, walletTransferRequest.currency);</span>
+<span class="nc" id="L134">    WalletTransferRequest walletTransferRequest = (WalletTransferRequest) o;</span>
+<span class="nc bnc" id="L135" title="All 2 branches missed.">    return Objects.equals(this.sourcePhoneNumber, walletTransferRequest.sourcePhoneNumber) &amp;&amp;</span>
+<span class="nc bnc" id="L136" title="All 2 branches missed.">        Objects.equals(this.targetPhoneNumber, walletTransferRequest.targetPhoneNumber) &amp;&amp;</span>
+<span class="nc bnc" id="L137" title="All 2 branches missed.">        Objects.equals(this.amount, walletTransferRequest.amount) &amp;&amp;</span>
+<span class="nc bnc" id="L138" title="All 2 branches missed.">        Objects.equals(this.currency, walletTransferRequest.currency);</span>
   }
 
   @Override
   public int hashCode() {
-<span class="nc" id="L119">    return Objects.hash(targetPhoneNumber, amount, currency);</span>
+<span class="nc" id="L143">    return Objects.hash(sourcePhoneNumber, targetPhoneNumber, amount, currency);</span>
   }
 
   @Override
   public String toString() {
-<span class="nc" id="L124">    StringBuilder sb = new StringBuilder();</span>
-<span class="nc" id="L125">    sb.append(&quot;class WalletTransferRequest {\n&quot;);</span>
-<span class="nc" id="L126">    sb.append(&quot;    targetPhoneNumber: &quot;).append(toIndentedString(targetPhoneNumber)).append(&quot;\n&quot;);</span>
-<span class="nc" id="L127">    sb.append(&quot;    amount: &quot;).append(toIndentedString(amount)).append(&quot;\n&quot;);</span>
-<span class="nc" id="L128">    sb.append(&quot;    currency: &quot;).append(toIndentedString(currency)).append(&quot;\n&quot;);</span>
-<span class="nc" id="L129">    sb.append(&quot;}&quot;);</span>
-<span class="nc" id="L130">    return sb.toString();</span>
+<span class="nc" id="L148">    StringBuilder sb = new StringBuilder();</span>
+<span class="nc" id="L149">    sb.append(&quot;class WalletTransferRequest {\n&quot;);</span>
+<span class="nc" id="L150">    sb.append(&quot;    sourcePhoneNumber: &quot;).append(toIndentedString(sourcePhoneNumber)).append(&quot;\n&quot;);</span>
+<span class="nc" id="L151">    sb.append(&quot;    targetPhoneNumber: &quot;).append(toIndentedString(targetPhoneNumber)).append(&quot;\n&quot;);</span>
+<span class="nc" id="L152">    sb.append(&quot;    amount: &quot;).append(toIndentedString(amount)).append(&quot;\n&quot;);</span>
+<span class="nc" id="L153">    sb.append(&quot;    currency: &quot;).append(toIndentedString(currency)).append(&quot;\n&quot;);</span>
+<span class="nc" id="L154">    sb.append(&quot;}&quot;);</span>
+<span class="nc" id="L155">    return sb.toString();</span>
   }
 
   /**
@@ -135,10 +160,10 @@ public class WalletTransferRequest {
    * (except the first line).
    */
   private String toIndentedString(Object o) {
-<span class="nc bnc" id="L138" title="All 2 branches missed.">    if (o == null) {</span>
-<span class="nc" id="L139">      return &quot;null&quot;;</span>
+<span class="nc bnc" id="L163" title="All 2 branches missed.">    if (o == null) {</span>
+<span class="nc" id="L164">      return &quot;null&quot;;</span>
     }
-<span class="nc" id="L141">    return o.toString().replace(&quot;\n&quot;, &quot;\n    &quot;);</span>
+<span class="nc" id="L166">    return o.toString().replace(&quot;\n&quot;, &quot;\n    &quot;);</span>
   }
 }
 

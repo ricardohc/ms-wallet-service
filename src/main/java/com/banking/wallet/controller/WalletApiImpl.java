@@ -13,18 +13,18 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.ReactiveSecurityContextHolder;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 /**
  * Implementacion del contrato OpenAPI (WalletApi). Reactivo con Reactor,
- * sin block(). El origen de la transferencia y el balance se derivan del JWT
- * autenticado, nunca del body ni del query.
+ * sin block().
+ *
+ * NOTA: Se elimino la validacion de identidad via JWT en los endpoints
+ * createWalletTransfer y findWalletBalance. Ahora el origen de la
+ * transferencia viaja en el body (sourcePhoneNumber) y el phoneNumber
+ * del balance viaja como query param. Esto es solo para pruebas locales.
  */
 @RestController
 @RequiredArgsConstructor
@@ -72,34 +72,22 @@ public class WalletApiImpl implements WalletApi {
     public Mono<ResponseEntity<OperationAcceptedResponse>> createWalletTransfer(
             String xCorrelationID, String xChannelID, UUID xTransactionID,
             Mono<WalletTransferRequest> walletTransferRequest, ServerWebExchange exchange) {
-        return Mono.deferContextual(ctx -> authenticatedPhoneNumber()
-                .flatMap(phone -> walletTransferRequest
-                        .flatMap(req -> walletService.transfer(req, phone, xTransactionID)))
+        return walletTransferRequest
+                .flatMap(req -> walletService.transfer(
+                        req, req.getSourcePhoneNumber(), xTransactionID))
                 .map(operationId -> {
                     OperationAcceptedResponse r = new OperationAcceptedResponse();
                     r.setOperationId(operationId);
                     r.setStatus("ACCEPTED");
                     return ResponseEntity.status(HttpStatus.ACCEPTED).body(r);
-                }));
+                });
     }
 
     @Override
     public Mono<ResponseEntity<BalanceResponse>> findWalletBalance(
-            String xCorrelationID, String xChannelID, ServerWebExchange exchange) {
-        return authenticatedPhoneNumber()
-                .flatMap(phone -> walletService.findBalance(phone))
+            String phoneNumber, String xCorrelationID, String xChannelID,
+            ServerWebExchange exchange) {
+        return walletService.findBalance(phoneNumber)
                 .map(ResponseEntity::ok);
-    }
-
-    private Mono<String> authenticatedPhoneNumber() {
-        return ReactiveSecurityContextHolder.getContext()
-                .map(SecurityContext::getAuthentication)
-                .filter(Authentication::isAuthenticated)
-                .map(Authentication::getPrincipal)
-                .filter(Jwt.class::isInstance)
-                .map(Jwt.class::cast)
-                .map(jwt -> jwt.getClaimAsString("phone_number"))
-                .switchIfEmpty(Mono.error(new com.banking.wallet.exception.WalletForbiddenException(
-                        "Authenticated identity missing")));
     }
 }

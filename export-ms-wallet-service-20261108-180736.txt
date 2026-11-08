@@ -1,0 +1,1720 @@
+=== pom.xml ===
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>3.3.13</version>
+    <relativePath/>
+  </parent>
+
+  <groupId>com.banking</groupId>
+  <artifactId>ms-wallet-service</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <name>ms-wallet-service</name>
+  <description>Microservicio wallet</description>
+
+  <properties>
+    <java.version>17</java.version>
+    <spring-cloud.version>2023.0.3</spring-cloud.version>
+    <lombok.version>1.18.32</lombok.version>
+    <jacoco.version>0.8.12</jacoco.version>
+    <springdoc.version>2.5.0</springdoc.version>
+    <openapi-generator.version>7.6.0</openapi-generator.version>
+    <rxjava.version>3.1.8</rxjava.version>
+    <reactor-adapter.version>3.6.0</reactor-adapter.version>
+    <resilience4j.version>2.2.0</resilience4j.version>
+    <maven.compiler.source>17</maven.compiler.source>
+    <maven.compiler.target>17</maven.compiler.target>
+    <maven.compiler.release>17</maven.compiler.release>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-webflux</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-data-mongodb-reactive</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.kafka</groupId>
+      <artifactId>spring-kafka</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.projectreactor.kafka</groupId>
+      <artifactId>reactor-kafka</artifactId>
+      <version>1.3.23</version>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-security</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-validation</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.reactivex.rxjava3</groupId>
+      <artifactId>rxjava</artifactId>
+      <version>${rxjava.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.projectreactor.addons</groupId>
+      <artifactId>reactor-adapter</artifactId>
+      <version>${reactor-adapter.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.cloud</groupId>
+      <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.github.resilience4j</groupId>
+      <artifactId>resilience4j-spring-boot3</artifactId>
+      <version>${resilience4j.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <version>${lombok.version}</version>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springdoc</groupId>
+      <artifactId>springdoc-openapi-starter-webflux-ui</artifactId>
+      <version>${springdoc.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-registry-prometheus</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.projectreactor</groupId>
+      <artifactId>reactor-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>de.flapdoodle.embed</groupId>
+      <artifactId>de.flapdoodle.embed.mongo</artifactId>
+      <version>4.12.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.openapitools</groupId>
+      <artifactId>jackson-databind-nullable</artifactId>
+      <version>0.2.6</version>
+    </dependency>
+  </dependencies>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-dependencies</artifactId>
+        <version>${spring-cloud.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <exclude>
+              <groupId>org.projectlombok</groupId>
+              <artifactId>lombok</artifactId>
+            </exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <source>17</source>
+          <target>17</target>
+          <annotationProcessorPaths>
+            <path>
+              <groupId>org.projectlombok</groupId>
+              <artifactId>lombok</artifactId>
+              <version>${lombok.version}</version>
+            </path>
+          </annotationProcessorPaths>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <version>3.3.1</version>
+        <configuration>
+          <configLocation>google_checks.xml</configLocation>
+          <consoleOutput>true</consoleOutput>
+          <failsOnError>true</failsOnError>
+        </configuration>
+        <executions>
+          <execution>
+            <id>validate</id>
+            <phase>validate</phase>
+            <goals><goal>check</goal></goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>${jacoco.version}</version>
+        <executions>
+          <execution><goals><goal>prepare-agent</goal></goals></execution>
+          <execution>
+            <id>report</id>
+            <phase>test</phase>
+            <goals><goal>report</goal></goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.openapitools</groupId>
+        <artifactId>openapi-generator-maven-plugin</artifactId>
+        <version>${openapi-generator.version}</version>
+        <executions>
+          <execution>
+            <id>generate-api</id>
+            <goals><goal>generate</goal></goals>
+            <configuration>
+              <inputSpec>${project.basedir}/src/main/resources/openapi/ms-wallet-service-openapi.yaml</inputSpec>
+              <generatorName>spring</generatorName>
+              <apiPackage>com.banking.wallet.api</apiPackage>
+              <modelPackage>com.banking.wallet.dto</modelPackage>
+              <configOptions>
+                <interfaceOnly>true</interfaceOnly>
+                <useTags>true</useTags>
+                <reactive>true</reactive>
+                <useSpringBoot3>true</useSpringBoot3>
+                <useJakartaEe>true</useJakartaEe>
+                <dateLibrary>java8</dateLibrary>
+                <useSwaggerAnnotations>false</useSwaggerAnnotations>
+                <skipDefaultInterface>true</skipDefaultInterface>
+                <includeHttpRequestContext>false</includeHttpRequestContext>
+              </configOptions>
+              <generateSupportingFiles>false</generateSupportingFiles>
+              <generateApiTests>false</generateApiTests>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>
+
+=== src/main/java/com/banking/wallet/WalletServiceApplication.java ===
+package com.banking.wallet;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class WalletServiceApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(WalletServiceApplication.class, args);
+    }
+}
+
+=== src/main/java/com/banking/wallet/client/AccountBalanceClient.java ===
+package com.banking.wallet.client;
+
+import java.math.BigDecimal;
+import java.util.UUID;
+import reactor.core.publisher.Mono;
+
+/**
+ * Cliente hacia ms-account-service para consultar el saldo de la cuenta
+ * principal cuando el monedero tiene tarjeta de debito vinculada.
+ */
+public interface AccountBalanceClient {
+
+    Mono<BigDecimal> getPrimaryAccountBalance(UUID walletId, String linkedDebitCardId,
+                                              String correlationId);
+}
+=== src/main/java/com/banking/wallet/client/AccountValidationClient.java ===
+package com.banking.wallet.client;
+
+import java.util.UUID;
+import reactor.core.publisher.Mono;
+
+/**
+ * Cliente hacia ms-account-service para validar cuentas antes de vincularlas
+ * a un monedero. Verifica que el accountType no sea FIXED_TERM.
+ */
+public interface AccountValidationClient {
+
+    Mono<Void> validateLinkableAccount(UUID accountId);
+}
+=== src/main/java/com/banking/wallet/client/TransactionServiceClient.java ===
+package com.banking.wallet.client;
+
+import com.banking.wallet.service.WalletTransferCommand;
+import java.util.UUID;
+import reactor.core.publisher.Mono;
+
+/** Cliente hacia ms-transaction-service para orquestar la transferencia Yanki. */
+public interface TransactionServiceClient {
+
+    Mono<UUID> createTransfer(WalletTransferCommand command);
+}
+=== src/main/java/com/banking/wallet/client/impl/AccountBalanceClientImpl.java ===
+package com.banking.wallet.client.impl;
+
+import com.banking.wallet.client.AccountBalanceClient;
+import com.banking.wallet.config.ExternalServicesProperties;
+import com.banking.wallet.exception.WalletUnprocessableException;
+import java.math.BigDecimal;
+import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+import reactor.core.publisher.Mono;
+
+/**
+ * Implementacion de consulta de saldo de cuenta principal.
+ * Parte II hace la llamada HTTP con timeout 2s; en esta etapa devuelve 422
+ * si no hay tarjeta vinculada y simula fallback con saldo 0 mientras no exista
+ * el cliente HTTP.
+ */
+@Component
+@RequiredArgsConstructor
+@Slf4j
+public class AccountBalanceClientImpl implements AccountBalanceClient {
+
+    private final ExternalServicesProperties properties;
+
+    @Override
+    public Mono<BigDecimal> getPrimaryAccountBalance(
+            UUID walletId, String linkedDebitCardId, String correlationId) {
+        if (linkedDebitCardId == null || linkedDebitCardId.isBlank()) {
+            return Mono.error(new WalletUnprocessableException(
+                    "Wallet has no linked debit card; primary account balance unavailable"));
+        }
+        log.info("Querying primary account balance for wallet {} (url={})",
+                walletId, properties.getAccountBaseUrl());
+        // TODO Parte II: WebClient call con Resilience4j timeout 2s.
+        return Mono.just(BigDecimal.ZERO);
+    }
+}
+=== src/main/java/com/banking/wallet/client/impl/AccountValidationClientImpl.java ===
+package com.banking.wallet.client.impl;
+
+import com.banking.wallet.client.AccountValidationClient;
+import com.banking.wallet.config.ExternalServicesProperties;
+import com.banking.wallet.exception.WalletConflictException;
+import com.banking.wallet.exception.WalletUnprocessableException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
+import reactor.core.publisher.Mono;
+
+/**
+ * Implementacion del cliente de validacion de cuentas contra ms-account-service.
+ * Verifica que el accountType no sea FIXED_TERM.
+ */
+@Component
+@RequiredArgsConstructor
+@Slf4j
+public class AccountValidationClientImpl implements AccountValidationClient {
+
+    private final WebClient.Builder webClientBuilder;
+    private final ObjectMapper objectMapper;
+    private final ExternalServicesProperties properties;
+
+    @Override
+    public Mono<Void> validateLinkableAccount(UUID accountId) {
+        String url = properties.getAccountBaseUrl() + "/api/v1/accounts/" + accountId;
+        log.debug("Validating linked account {} against ms-account-service", accountId);
+        return webClientBuilder.build()
+                .get()
+                .uri(url)
+                .header("Accept", "application/json")
+                // Headers obligatorios exigidos por ms-account-service (OpenAPI)
+                .header("X-Correlation-ID", UUID.randomUUID().toString())
+                .header("X-Channel-ID", "MS-WALLET-SERVICE")
+                .retrieve()
+                .bodyToMono(String.class)
+                .flatMap(body -> {
+                    try {
+                        JsonNode node = objectMapper.readTree(body);
+                        String accountType = node.path("accountType").asText(null);
+                        if ("FIXED_TERM".equals(accountType)) {
+                            return Mono.error(new WalletConflictException(
+                                    "Fixed-term accounts are not compatible with wallet linking"));
+                        }
+                        return Mono.empty();
+                    } catch (Exception ex) {
+                        log.error("Failed to parse account response: {}", ex.getMessage());
+                        return Mono.error(new WalletUnprocessableException(
+                                "Unable to validate linked account"));
+                    }
+                })
+                .onErrorResume(WebClientResponseException.NotFound.class,
+                        ex -> Mono.error(new WalletUnprocessableException(
+                                "Linked account not found: " + accountId)))
+                .onErrorResume(ex -> {
+                    if (ex instanceof WalletConflictException
+                            || ex instanceof WalletUnprocessableException) {
+                        return Mono.error(ex);
+                    }
+                    log.error("Failed to validate account {}: {}", accountId, ex.getMessage());
+                    return Mono.error(new WalletUnprocessableException(
+                            "Unable to validate linked account: " + accountId));
+                })
+                .then();
+    }
+}
+=== src/main/java/com/banking/wallet/client/impl/TransactionServiceClientImpl.java ===
+package com.banking.wallet.client.impl;
+
+import com.banking.wallet.client.TransactionServiceClient;
+import com.banking.wallet.service.WalletTransferCommand;
+import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+import reactor.core.publisher.Mono;
+
+/**
+ * Cliente hacia ms-transaction-service. Parte II: llamada HTTP con timeout 2s.
+ * En esta etapa se simula la aceptacion con un operationId generado.
+ */
+@Component
+@RequiredArgsConstructor
+@Slf4j
+public class TransactionServiceClientImpl implements TransactionServiceClient {
+
+    @Override
+    public Mono<UUID> createTransfer(WalletTransferCommand command) {
+        log.info("Delegating Yanki transfer to transaction service, txId={}",
+                command.getTransactionId());
+        // TODO Parte II: WebClient POST a transaction service con Resilience4j.
+        return Mono.just(command.getTransactionId());
+    }
+}
+=== src/main/java/com/banking/wallet/config/ExternalServicesProperties.java ===
+package com.banking.wallet.config;
+
+import lombok.Data;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Configuration;
+
+/** Configuracion de clientes HTTP externos (account, card, transaction). */
+@Data
+@Configuration
+@ConfigurationProperties(prefix = "external.services")
+public class ExternalServicesProperties {
+
+    private String accountBaseUrl = "http://localhost:8082";
+    private String cardBaseUrl = "http://localhost:8084";
+    private String transactionBaseUrl = "http://localhost:8083";
+}
+=== src/main/java/com/banking/wallet/config/KafkaProducerConfig.java ===
+package com.banking.wallet.config;
+
+import com.banking.wallet.event.WalletEvent;
+import java.util.Map;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.kafka.core.reactive.ReactiveKafkaProducerTemplate;
+import reactor.kafka.sender.SenderOptions;
+
+/** Configuracion del productor Kafka reactivo para eventos de wallet. */
+@Configuration
+public class KafkaProducerConfig {
+
+    @Bean
+    public ReactiveKafkaProducerTemplate<String, WalletEvent> reactiveKafkaProducerTemplate(
+            @Value("${spring.kafka.bootstrap-servers}") String bootstrapServers) {
+        SenderOptions<String, WalletEvent> options = SenderOptions
+                .<String, WalletEvent>create(Map.of(
+                        "bootstrap.servers", bootstrapServers));
+        return new ReactiveKafkaProducerTemplate<>(options);
+    }
+}
+
+=== src/main/java/com/banking/wallet/config/SecurityConfig.java ===
+package com.banking.wallet.config;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
+import org.springframework.security.config.web.server.ServerHttpSecurity;
+import org.springframework.security.web.server.SecurityWebFilterChain;
+
+@Configuration
+@EnableWebFluxSecurity
+public class SecurityConfig {
+
+    /**
+     * Perfil dev: permite todo, sin JWT. Útil para Postman/curl local
+     * mientras no exista un Identity Provider real (Keycloak/Okta).
+     * NUNCA usar en producción.
+     */
+    @Bean
+    @Profile("dev")
+    public SecurityWebFilterChain devSecurityWebFilterChain(ServerHttpSecurity http) {
+        return http
+                .csrf(ServerHttpSecurity.CsrfSpec::disable)
+                .authorizeExchange(exchanges -> exchanges.anyExchange().permitAll())
+                .build();
+    }
+
+    /**
+     * Perfil no-dev: OAuth2 Resource Server con JWT real.
+     * El `phone_number` se toma del token emitido por el IdP.
+     */
+    @Bean
+    @Profile("!dev")
+    public SecurityWebFilterChain jwtSecurityWebFilterChain(ServerHttpSecurity http) {
+        return http
+                .csrf(ServerHttpSecurity.CsrfSpec::disable)
+                .authorizeExchange(exchanges -> exchanges.anyExchange().authenticated())
+                .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> { }))
+                .build();
+    }
+}
+=== src/main/java/com/banking/wallet/controller/WalletApiImpl.java ===
+package com.banking.wallet.controller;
+
+import com.banking.wallet.api.WalletApi;
+import com.banking.wallet.dto.BalanceResponse;
+import com.banking.wallet.dto.OperationAcceptedResponse;
+import com.banking.wallet.dto.WalletCreateRequest;
+import com.banking.wallet.dto.WalletResponse;
+import com.banking.wallet.dto.WalletTransferRequest;
+import com.banking.wallet.dto.WalletUpdateRequest;
+import com.banking.wallet.service.WalletService;
+import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ServerWebExchange;
+import reactor.core.publisher.Mono;
+
+/**
+ * Implementacion del contrato OpenAPI (WalletApi). Reactivo con Reactor,
+ * sin block().
+ *
+ * NOTA: Se elimino la validacion de identidad via JWT en los endpoints
+ * createWalletTransfer y findWalletBalance. Ahora el origen de la
+ * transferencia viaja en el body (sourcePhoneNumber) y el phoneNumber
+ * del balance viaja como query param. Esto es solo para pruebas locales.
+ */
+@RestController
+@RequiredArgsConstructor
+@Slf4j
+public class WalletApiImpl implements WalletApi {
+
+    private final WalletService walletService;
+
+    @Override
+    public Mono<ResponseEntity<WalletResponse>> createWallet(
+            String xCorrelationID, String xChannelID, UUID xTransactionID,
+            Mono<WalletCreateRequest> walletCreateRequest, ServerWebExchange exchange) {
+        return walletCreateRequest
+                .flatMap(req -> walletService.create(req, xTransactionID))
+                .map(r -> ResponseEntity.status(HttpStatus.CREATED).body(r));
+    }
+
+    @Override
+    public Mono<ResponseEntity<WalletResponse>> findWalletById(
+            UUID walletId, String xCorrelationID, String xChannelID,
+            ServerWebExchange exchange) {
+        return walletService.findById(walletId)
+                .map(ResponseEntity::ok);
+    }
+
+    @Override
+    public Mono<ResponseEntity<WalletResponse>> updateWallet(
+            UUID walletId, String xCorrelationID, String xChannelID,
+            UUID xTransactionID, Mono<WalletUpdateRequest> walletUpdateRequest,
+            ServerWebExchange exchange) {
+        return walletUpdateRequest
+                .flatMap(req -> walletService.update(walletId, req, xTransactionID))
+                .map(ResponseEntity::ok);
+    }
+
+    @Override
+    public Mono<ResponseEntity<Void>> deactivateWallet(
+            UUID walletId, String xCorrelationID, String xChannelID,
+            UUID xTransactionID, ServerWebExchange exchange) {
+        return walletService.deactivate(walletId, xTransactionID)
+                .thenReturn(ResponseEntity.noContent().build());
+    }
+
+    @Override
+    public Mono<ResponseEntity<OperationAcceptedResponse>> createWalletTransfer(
+            String xCorrelationID, String xChannelID, UUID xTransactionID,
+            Mono<WalletTransferRequest> walletTransferRequest, ServerWebExchange exchange) {
+        return walletTransferRequest
+                .flatMap(req -> walletService.transfer(
+                        req, req.getSourcePhoneNumber(), xTransactionID))
+                .map(operationId -> {
+                    OperationAcceptedResponse r = new OperationAcceptedResponse();
+                    r.setOperationId(operationId);
+                    r.setStatus("ACCEPTED");
+                    return ResponseEntity.status(HttpStatus.ACCEPTED).body(r);
+                });
+    }
+
+    @Override
+    public Mono<ResponseEntity<BalanceResponse>> findWalletBalance(
+            String phoneNumber, String xCorrelationID, String xChannelID,
+            ServerWebExchange exchange) {
+        return walletService.findBalance(phoneNumber)
+                .map(ResponseEntity::ok);
+    }
+}
+=== src/main/java/com/banking/wallet/document/WalletDocument.java ===
+package com.banking.wallet.document;
+
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.UUID;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.annotation.Version;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+/**
+ * Monedero Yanki. Persistencia propia del servicio (base banking_wallet,
+ * coleccion wallets). Separado de los DTOs de contrato.
+ */
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Document(collection = "wallets")
+@CompoundIndex(name = "uk_doc_type_doc_number", def = "{'documentType': 1, 'documentNumber': 1}",
+        unique = true)
+public class WalletDocument {
+
+    @Id
+    private String id;
+
+    private UUID walletUuid;
+
+    private String documentType;
+
+    @Indexed(unique = true)
+    private String documentNumber;
+
+    @Indexed(unique = true)
+    private String phoneNumber;
+
+    private String imei;
+
+    private String email;
+
+    private String status;
+
+    private UUID linkedDebitCardId;
+
+    /** Saldo propio del monedero. Con tarjeta vinculada se persiste siempre 0.00. */
+    private BigDecimal balance;
+
+    private String currency;
+
+    @CreatedDate
+    private Instant createdAt;
+
+    @LastModifiedDate
+    private Instant updatedAt;
+
+    @Version
+    private Long version;
+}
+
+=== src/main/java/com/banking/wallet/event/WalletEvent.java ===
+package com.banking.wallet.event;
+
+import java.time.Instant;
+import java.util.UUID;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+/**
+ * Evento de dominio del monedero (topico banking.wallet.events.v1).
+ * Solo se publica si el catalogo Kafka lo formaliza.
+ */
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class WalletEvent {
+
+    private String eventType;
+    private UUID walletId;
+    private String phoneNumber;
+    private Instant occurredAt;
+}
+
+=== src/main/java/com/banking/wallet/event/WalletEventPublisher.java ===
+package com.banking.wallet.event;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.kafka.core.reactive.ReactiveKafkaProducerTemplate;
+import org.springframework.stereotype.Component;
+import reactor.core.publisher.Mono;
+
+/**
+ * Productor de eventos de dominio hacia banking.wallet.events.v1.
+ * Los eventos de movimiento se formalizan en el catalogo antes de publicarse.
+ */
+@Component
+@RequiredArgsConstructor
+@Slf4j
+public class WalletEventPublisher {
+
+    private static final String TOPIC = "banking.wallet.events.v1";
+
+    private final ReactiveKafkaProducerTemplate<String, WalletEvent> kafkaTemplate;
+
+    public Mono<Void> publish(WalletEvent event) {
+        return kafkaTemplate.send(TOPIC, event.getWalletId().toString(), event)
+                .doOnSuccess(ignored -> log.info("Wallet event published: {}", event.getEventType()))
+                .then();
+    }
+}
+
+=== src/main/java/com/banking/wallet/exception/BadRequestException.java ===
+package com.banking.wallet.exception;
+
+/** Solicitud invalida del cliente. Mapea a 400. */
+public class BadRequestException extends RuntimeException {
+
+    public BadRequestException(String message) {
+        super(message);
+    }
+}
+=== src/main/java/com/banking/wallet/exception/GlobalExceptionHandler.java ===
+package com.banking.wallet.exception;
+
+import com.banking.wallet.dto.ErrorResponse;
+import java.time.OffsetDateTime;
+import java.util.List;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.bind.support.WebExchangeBindException;
+import org.springframework.web.server.ServerWebExchange;
+import org.springframework.web.server.ServerWebInputException;
+import reactor.core.publisher.Mono;
+
+@RestControllerAdvice
+@Slf4j
+public class GlobalExceptionHandler {
+
+    @ExceptionHandler(WebExchangeBindException.class)
+    public Mono<ResponseEntity<ErrorResponse>> handleValidation(
+            WebExchangeBindException ex, ServerWebExchange exchange) {
+        List<String> details = ex.getFieldErrors().stream()
+                .map(err -> err.getField() + ": " + err.getDefaultMessage())
+                .toList();
+        return build(HttpStatus.BAD_REQUEST, "WALLET-400", "Invalid request",
+                exchange, details);
+    }
+
+    @ExceptionHandler(ServerWebInputException.class)
+    public Mono<ResponseEntity<ErrorResponse>> handleInput(
+            ServerWebInputException ex, ServerWebExchange exchange) {
+        Throwable cause = ex.getCause();
+        String detail = cause != null ? cause.getMessage() : ex.getReason();
+        if (detail == null) {
+            detail = "Invalid request parameter or body";
+        }
+        if (detail.length() > 300) {
+            detail = detail.substring(0, 300) + "...";
+        }
+        log.warn("Input error: {}", detail);
+        return build(HttpStatus.BAD_REQUEST, "WALLET-400", detail,
+                exchange, List.of(detail));
+    }
+
+    @ExceptionHandler(BadRequestException.class)
+    public Mono<ResponseEntity<ErrorResponse>> handleBadRequest(
+            BadRequestException ex, ServerWebExchange exchange) {
+        return build(HttpStatus.BAD_REQUEST, "WALLET-400", ex.getMessage(),
+                exchange, null);
+    }
+
+    @ExceptionHandler(WalletNotFoundException.class)
+    public Mono<ResponseEntity<ErrorResponse>> handleNotFound(
+            WalletNotFoundException ex, ServerWebExchange exchange) {
+        return build(HttpStatus.NOT_FOUND, "WALLET-404", ex.getMessage(), exchange, null);
+    }
+
+    @ExceptionHandler(WalletConflictException.class)
+    public Mono<ResponseEntity<ErrorResponse>> handleConflict(
+            WalletConflictException ex, ServerWebExchange exchange) {
+        return build(HttpStatus.CONFLICT, "WALLET-409", ex.getMessage(), exchange, null);
+    }
+
+    @ExceptionHandler(WalletForbiddenException.class)
+    public Mono<ResponseEntity<ErrorResponse>> handleForbidden(
+            WalletForbiddenException ex, ServerWebExchange exchange) {
+        return build(HttpStatus.FORBIDDEN, "WALLET-403", ex.getMessage(), exchange, null);
+    }
+
+    @ExceptionHandler(WalletUnprocessableException.class)
+    public Mono<ResponseEntity<ErrorResponse>> handleUnprocessable(
+            WalletUnprocessableException ex, ServerWebExchange exchange) {
+        return build(HttpStatus.UNPROCESSABLE_ENTITY, "WALLET-422",
+                ex.getMessage(), exchange, null);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public Mono<ResponseEntity<ErrorResponse>> handleGeneric(
+            Exception ex, ServerWebExchange exchange) {
+        log.error("Unexpected error", ex);
+        return build(HttpStatus.INTERNAL_SERVER_ERROR, "WALLET-500",
+                "Internal error", exchange, null);
+    }
+
+    private Mono<ResponseEntity<ErrorResponse>> build(HttpStatus status, String code,
+                                                      String message, ServerWebExchange exchange, List<String> details) {
+        ErrorResponse body = new ErrorResponse();
+        body.setCode(code);
+        body.setMessage(message);
+        body.setTimestamp(OffsetDateTime.now());
+        body.setCorrelationId(exchange.getRequest().getHeaders()
+                .getFirst("X-Correlation-ID"));
+        body.setDetails(details);
+        return Mono.just(ResponseEntity.status(status).body(body));
+    }
+}
+=== src/main/java/com/banking/wallet/exception/WalletConflictException.java ===
+package com.banking.wallet.exception;
+
+/** Conflicto: documento o telefono ya registrados. Mapea a 409. */
+public class WalletConflictException extends RuntimeException {
+
+    public WalletConflictException(String message) {
+        super(message);
+    }
+}
+
+=== src/main/java/com/banking/wallet/exception/WalletForbiddenException.java ===
+package com.banking.wallet.exception;
+
+/** El origen de la transferencia no corresponde al JWT autenticado. Mapea a 403. */
+public class WalletForbiddenException extends RuntimeException {
+
+    public WalletForbiddenException(String message) {
+        super(message);
+    }
+}
+
+=== src/main/java/com/banking/wallet/exception/WalletNotFoundException.java ===
+package com.banking.wallet.exception;
+
+/** Monedero no encontrado. Mapea a 404. */
+public class WalletNotFoundException extends RuntimeException {
+
+    public WalletNotFoundException(String message) {
+        super(message);
+    }
+}
+
+=== src/main/java/com/banking/wallet/exception/WalletUnprocessableException.java ===
+package com.banking.wallet.exception;
+
+/** Entidad no procesable (ej. tarjeta inexistente o no ACTIVE). Mapea a 422. */
+public class WalletUnprocessableException extends RuntimeException {
+
+    public WalletUnprocessableException(String message) {
+        super(message);
+    }
+}
+
+=== src/main/java/com/banking/wallet/mapper/WalletMapper.java ===
+package com.banking.wallet.mapper;
+
+import com.banking.wallet.document.WalletDocument;
+import com.banking.wallet.dto.WalletResponse;
+import java.math.BigDecimal;
+import java.util.UUID;
+import org.springframework.stereotype.Component;
+
+/**
+ * Mapea WalletDocument a DTOs de contrato. Nunca expone campos internos
+ * adicionales al contrato OpenAPI.
+ */
+@Component
+public class WalletMapper {
+
+    public WalletDocument newWallet(
+            String documentType,
+            String documentNumber,
+            String phoneNumber,
+            String imei,
+            String email) {
+        return WalletDocument.builder()
+                .walletUuid(UUID.randomUUID())
+                .documentType(documentType)
+                .documentNumber(documentNumber)
+                .phoneNumber(phoneNumber)
+                .imei(imei)
+                .email(email)
+                .status("ACTIVE")
+                .balance(new BigDecimal("0.00"))
+                .currency("PEN")
+                .build();
+    }
+
+    public WalletResponse toResponse(WalletDocument doc, String balance) {
+        WalletResponse r = new WalletResponse();
+        r.setId(doc.getWalletUuid());
+        r.setPhoneNumber(doc.getPhoneNumber());
+        r.setEmail(doc.getEmail());
+        r.setStatus(com.banking.wallet.dto.WalletStatus.valueOf(doc.getStatus()));
+        r.setLinkedDebitCardId(doc.getLinkedDebitCardId());
+        r.setBalance(balance);
+        r.setCurrency(doc.getCurrency());
+        return r;
+    }
+
+    public WalletResponse toResponse(WalletDocument doc) {
+        return toResponse(doc, doc.getBalance().toPlainString());
+    }
+}
+
+=== src/main/java/com/banking/wallet/repository/WalletRepository.java ===
+package com.banking.wallet.repository;
+
+import com.banking.wallet.document.WalletDocument;
+import java.util.UUID;
+import org.springframework.data.repository.reactive.ReactiveCrudRepository;
+import reactor.core.publisher.Mono;
+
+/**
+ * Repositorio reactivo de wallets. Escritura directa a MongoDB propia
+ * (banking_wallet.wallets). Metodos derivados, sin @Query.
+ */
+public interface WalletRepository extends ReactiveCrudRepository<WalletDocument, String> {
+
+    Mono<WalletDocument> findByWalletUuid(UUID walletUuid);
+
+    Mono<WalletDocument> findByPhoneNumber(String phoneNumber);
+
+    Mono<WalletDocument> findByDocumentTypeAndDocumentNumber(String documentType, String documentNumber);
+
+    Mono<Boolean> existsByPhoneNumber(String phoneNumber);
+
+    Mono<Boolean> existsByDocumentTypeAndDocumentNumber(String documentType, String documentNumber);
+}
+
+=== src/main/java/com/banking/wallet/service/WalletService.java ===
+package com.banking.wallet.service;
+
+import com.banking.wallet.dto.WalletResponse;
+import com.banking.wallet.dto.WalletTransferRequest;
+import com.banking.wallet.dto.WalletUpdateRequest;
+import java.util.UUID;
+import reactor.core.publisher.Mono;
+
+/** Contrato de servicio del monedero Yanki. */
+public interface WalletService {
+
+    Mono<WalletResponse> create(
+            com.banking.wallet.dto.WalletCreateRequest request, UUID transactionId);
+
+    Mono<WalletResponse> findById(UUID walletId);
+
+    Mono<WalletResponse> update(UUID walletId, WalletUpdateRequest request, UUID transactionId);
+
+    Mono<Void> deactivate(UUID walletId, UUID transactionId);
+
+    Mono<java.util.UUID> transfer(
+            WalletTransferRequest request, String authenticatedPhoneNumber, UUID transactionId);
+
+    Mono<com.banking.wallet.dto.BalanceResponse> findBalance(String authenticatedPhoneNumber);
+}
+
+=== src/main/java/com/banking/wallet/service/WalletTransferCommand.java ===
+package com.banking.wallet.service;
+
+import java.math.BigDecimal;
+import java.util.UUID;
+import lombok.Builder;
+import lombok.Value;
+
+/** Comando de transferencia Yanki hacia ms-transaction-service. */
+@Value
+@Builder
+public class WalletTransferCommand {
+
+    UUID transactionId;
+    UUID sourceWalletId;
+    String targetPhoneNumber;
+    BigDecimal amount;
+    String currency;
+    String correlationId;
+}
+
+=== src/main/java/com/banking/wallet/service/impl/WalletServiceImpl.java ===
+package com.banking.wallet.service.impl;
+
+import com.banking.wallet.client.AccountBalanceClient;
+import com.banking.wallet.client.AccountValidationClient;
+import com.banking.wallet.client.TransactionServiceClient;
+import com.banking.wallet.document.WalletDocument;
+import com.banking.wallet.dto.WalletCreateRequest;
+import com.banking.wallet.dto.WalletResponse;
+import com.banking.wallet.dto.WalletStatus;
+import com.banking.wallet.dto.WalletTransferRequest;
+import com.banking.wallet.dto.WalletUpdateRequest;
+import com.banking.wallet.exception.WalletConflictException;
+import com.banking.wallet.exception.WalletForbiddenException;
+import com.banking.wallet.exception.WalletNotFoundException;
+import com.banking.wallet.exception.WalletUnprocessableException;
+import com.banking.wallet.event.WalletEvent;
+import com.banking.wallet.event.WalletEventPublisher;
+import com.banking.wallet.mapper.WalletMapper;
+import com.banking.wallet.repository.WalletRepository;
+import com.banking.wallet.service.WalletService;
+import com.banking.wallet.service.WalletTransferCommand;
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DuplicateKeyException;
+import org.springframework.stereotype.Service;
+import reactor.core.publisher.Mono;
+
+/**
+ * Logica de negocio del monedero Yanki.
+ * Reglas: unicidad documento/telefono, saldo propio sin tarjeta (fuente de
+ * verdad), con tarjeta balance local = 0.00 y fuente de verdad ms-account.
+ */
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class WalletServiceImpl implements WalletService {
+
+    private static final String SUPPORTED_CURRENCY = "PEN";
+
+    private final WalletRepository repository;
+    private final WalletMapper mapper;
+    private final WalletEventPublisher eventPublisher;
+    private final TransactionServiceClient transactionServiceClient;
+    private final AccountBalanceClient accountBalanceClient;
+    private final AccountValidationClient accountValidationClient;
+
+    @Override
+    public Mono<WalletResponse> create(WalletCreateRequest request, UUID transactionId) {
+        return repository.existsByDocumentTypeAndDocumentNumber(
+                        request.getDocumentType().getValue(), request.getDocumentNumber())
+                .flatMap(exists -> exists
+                        ? Mono.error(new WalletConflictException(
+                        "Wallet already exists for document"))
+                        : repository.existsByPhoneNumber(request.getPhoneNumber()))
+                .flatMap(phoneExists -> phoneExists
+                        ? Mono.error(new WalletConflictException(
+                        "Wallet already exists for phone number"))
+                        : persistNewWallet(request, transactionId))
+                .onErrorResume(DuplicateKeyException.class,
+                        e -> Mono.error(new WalletConflictException(
+                                "Wallet already exists for document or phone")));
+    }
+
+    private Mono<WalletResponse> persistNewWallet(WalletCreateRequest request, UUID transactionId) {
+        WalletDocument doc = mapper.newWallet(
+                request.getDocumentType().getValue(),
+                request.getDocumentNumber(),
+                request.getPhoneNumber(),
+                request.getImei(),
+                request.getEmail());
+        return repository.save(doc)
+                .flatMap(saved -> publishEvent("WalletCreated", saved)
+                        .thenReturn(mapper.toResponse(saved)))
+                .doOnSuccess(r -> log.info("Wallet created txId={}", transactionId));
+    }
+
+    @Override
+    public Mono<WalletResponse> findById(UUID walletId) {
+        return repository.findByWalletUuid(walletId)
+                .switchIfEmpty(Mono.error(new WalletNotFoundException("Wallet not found")))
+                .map(mapper::toResponse);
+    }
+
+    @Override
+    public Mono<WalletResponse> update(UUID walletId, WalletUpdateRequest request,
+                                       UUID transactionId) {
+        return repository.findByWalletUuid(walletId)
+                .switchIfEmpty(Mono.error(new WalletNotFoundException("Wallet not found")))
+                .flatMap(doc -> applyUpdate(doc, request))
+                .flatMap(repository::save)
+                .flatMap(saved -> publishEvent("WalletUpdated", saved)
+                        .thenReturn(mapper.toResponse(saved)));
+    }
+
+    private Mono<WalletDocument> applyUpdate(WalletDocument doc, WalletUpdateRequest request) {
+        if (request.getLinkedDebitCardId() != null) {
+            return accountValidationClient.validateLinkableAccount(request.getLinkedDebitCardId())
+                    .thenReturn(withLinkedCard(doc, request.getLinkedDebitCardId()));
+        }
+        if (request.getStatus() != null) {
+            doc.setStatus(request.getStatus().getValue());
+        }
+        return Mono.just(doc);
+    }
+
+    private WalletDocument withLinkedCard(WalletDocument doc, UUID cardId) {
+        doc.setLinkedDebitCardId(cardId);
+        doc.setBalance(new BigDecimal("0.00"));
+        return doc;
+    }
+
+    @Override
+    public Mono<Void> deactivate(UUID walletId, UUID transactionId) {
+        return repository.findByWalletUuid(walletId)
+                .switchIfEmpty(Mono.error(new WalletNotFoundException("Wallet not found")))
+                .flatMap(doc -> {
+                    doc.setStatus(WalletStatus.INACTIVE.getValue());
+                    return repository.save(doc)
+                            .then(publishEvent("WalletDeactivated", doc));
+                });
+    }
+
+    @Override
+    public Mono<UUID> transfer(WalletTransferRequest request, String sourcePhoneNumber,
+                               UUID transactionId) {
+        return Mono.defer(() -> {
+            // --- Validacion 1: moneda soportada ---
+            if (!SUPPORTED_CURRENCY.equalsIgnoreCase(request.getCurrency())) {
+                return Mono.error(new WalletUnprocessableException(
+                        "Unsupported currency. Only PEN is allowed"));
+            }
+
+            // --- Validacion 2: source != target ---
+            if (sourcePhoneNumber.equals(request.getTargetPhoneNumber())) {
+                return Mono.error(new WalletUnprocessableException(
+                        "Source phone number and target phone number cannot be the same"));
+            }
+
+            BigDecimal amount = new BigDecimal(request.getAmount());
+
+            // --- Buscamos el wallet origen ---
+            return repository.findByPhoneNumber(sourcePhoneNumber)
+                    .switchIfEmpty(Mono.error(new WalletNotFoundException(
+                            "Source wallet not found for phone number")))
+                    .flatMap(source -> {
+                        if (!WalletStatus.ACTIVE.getValue().equals(source.getStatus())) {
+                            return Mono.error(new WalletForbiddenException(
+                                    "Wallet is not active"));
+                        }
+
+                        // --- Validacion 3: fondos suficientes ---
+                        Mono<BigDecimal> balanceMono;
+                        if (source.getLinkedDebitCardId() != null) {
+                            balanceMono = accountBalanceClient
+                                    .getPrimaryAccountBalance(source.getWalletUuid(),
+                                            source.getLinkedDebitCardId().toString(), null);
+                        } else {
+                            balanceMono = Mono.just(source.getBalance() == null
+                                    ? BigDecimal.ZERO : source.getBalance());
+                        }
+
+                        return balanceMono.flatMap(balance -> {
+                            if (balance.compareTo(amount) < 0) {
+                                return Mono.error(new WalletUnprocessableException(
+                                        "Insufficient funds in source wallet"));
+                            }
+                            return delegateTransfer(source, request, transactionId);
+                        });
+                    });
+        });
+    }
+
+    private Mono<UUID> delegateTransfer(WalletDocument source, WalletTransferRequest request,
+                                        UUID transactionId) {
+        WalletTransferCommand command = WalletTransferCommand.builder()
+                .transactionId(transactionId)
+                .sourceWalletId(source.getWalletUuid())
+                .targetPhoneNumber(request.getTargetPhoneNumber())
+                .amount(new BigDecimal(request.getAmount()))
+                .currency(request.getCurrency())
+                .build();
+        return transactionServiceClient.createTransfer(command);
+    }
+
+    @Override
+    public Mono<com.banking.wallet.dto.BalanceResponse> findBalance(
+            String authenticatedPhoneNumber) {
+        return repository.findByPhoneNumber(authenticatedPhoneNumber)
+                .switchIfEmpty(Mono.error(new WalletNotFoundException(
+                        "Wallet not found for phone number")))
+                .flatMap(doc -> {
+                    if (doc.getLinkedDebitCardId() != null) {
+                        return accountBalanceClient
+                                .getPrimaryAccountBalance(doc.getWalletUuid(),
+                                        doc.getLinkedDebitCardId().toString(), null)
+                                .map(balance -> toBalance(balance, doc.getCurrency()));
+                    }
+                    return Mono.just(toBalance(doc.getBalance(), doc.getCurrency()));
+                });
+    }
+
+    private com.banking.wallet.dto.BalanceResponse toBalance(BigDecimal balance, String currency) {
+        com.banking.wallet.dto.BalanceResponse r = new com.banking.wallet.dto.BalanceResponse();
+        r.setBalance(balance.toPlainString());
+        r.setCurrency(currency);
+        return r;
+    }
+
+    private Mono<Void> publishEvent(String eventType, WalletDocument doc) {
+        WalletEvent event = WalletEvent.builder()
+                .eventType(eventType)
+                .walletId(doc.getWalletUuid())
+                .phoneNumber(doc.getPhoneNumber())
+                .occurredAt(Instant.now())
+                .build();
+        return eventPublisher.publish(event).onErrorResume(e -> {
+            log.warn("Failed to publish wallet event {}: {}", eventType, e.getMessage());
+            return Mono.empty();
+        });
+    }
+}
+=== src/test/java/com/banking/wallet/service/impl/WalletServiceImplTest.java ===
+package com.banking.wallet.service.impl;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
+
+import com.banking.wallet.client.AccountBalanceClient;
+import com.banking.wallet.client.AccountValidationClient;
+import com.banking.wallet.client.TransactionServiceClient;
+import com.banking.wallet.document.WalletDocument;
+import com.banking.wallet.dto.WalletCreateRequest;
+import com.banking.wallet.dto.WalletTransferRequest;
+import com.banking.wallet.exception.WalletConflictException;
+import com.banking.wallet.exception.WalletForbiddenException;
+import com.banking.wallet.exception.WalletNotFoundException;
+import com.banking.wallet.event.WalletEventPublisher;
+import com.banking.wallet.mapper.WalletMapper;
+import com.banking.wallet.repository.WalletRepository;
+import java.math.BigDecimal;
+import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
+
+/** Pruebas unitarias de reglas de negocio del monedero (reactor-test). */
+@ExtendWith(MockitoExtension.class)
+class WalletServiceImplTest {
+
+    @Mock
+    private WalletRepository repository;
+
+    @Mock
+    private WalletEventPublisher eventPublisher;
+
+    @Mock
+    private TransactionServiceClient transactionServiceClient;
+
+    @Mock
+    private AccountBalanceClient accountBalanceClient;
+
+    @Mock
+    private AccountValidationClient accountValidationClient;
+
+    private WalletServiceImpl service;
+
+    @BeforeEach
+    void setUp() {
+        service = new WalletServiceImpl(repository, new WalletMapper(),
+                eventPublisher, transactionServiceClient, accountBalanceClient,
+                accountValidationClient);
+    }
+
+    private WalletDocument doc(String status) {
+        return WalletDocument.builder()
+                .walletUuid(UUID.randomUUID())
+                .documentType("DNI")
+                .documentNumber("12345678")
+                .phoneNumber("987654321")
+                .email("user@example.com")
+                .status(status)
+                .balance(new BigDecimal("50.00"))
+                .currency("PEN")
+                .build();
+    }
+
+    private WalletCreateRequest createRequest() {
+        WalletCreateRequest req = new WalletCreateRequest();
+        req.setDocumentType(com.banking.wallet.dto.DocumentType.DNI);
+        req.setDocumentNumber("12345678");
+        req.setPhoneNumber("987654321");
+        req.setEmail("user@example.com");
+        return req;
+    }
+
+    @Test
+    void createValidWalletReturnsResponse() {
+        when(repository.existsByDocumentTypeAndDocumentNumber(anyString(), anyString()))
+                .thenReturn(Mono.just(false));
+        when(repository.existsByPhoneNumber(anyString())).thenReturn(Mono.just(false));
+        when(repository.save(any(WalletDocument.class)))
+                .thenReturn(Mono.just(doc("ACTIVE")));
+        when(eventPublisher.publish(any())).thenReturn(Mono.empty());
+
+        StepVerifier.create(service.create(createRequest(), UUID.randomUUID()))
+                .assertNext(r -> {
+                    org.junit.jupiter.api.Assertions.assertEquals("987654321",
+                            r.getPhoneNumber());
+                    org.junit.jupiter.api.Assertions.assertEquals("ACTIVE",
+                            r.getStatus().getValue());
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void createWithDuplicatedDocumentReturns409() {
+        when(repository.existsByDocumentTypeAndDocumentNumber(anyString(), anyString()))
+                .thenReturn(Mono.just(true));
+
+        StepVerifier.create(service.create(createRequest(), UUID.randomUUID()))
+                .expectError(WalletConflictException.class)
+                .verify();
+    }
+
+    @Test
+    void createWithDuplicatedPhoneReturns409() {
+        when(repository.existsByDocumentTypeAndDocumentNumber(anyString(), anyString()))
+                .thenReturn(Mono.just(false));
+        when(repository.existsByPhoneNumber(anyString())).thenReturn(Mono.just(true));
+
+        StepVerifier.create(service.create(createRequest(), UUID.randomUUID()))
+                .expectError(WalletConflictException.class)
+                .verify();
+    }
+
+    @Test
+    void transferWithoutJwtReturnsForbidden() {
+        WalletTransferRequest req = new WalletTransferRequest();
+        req.setTargetPhoneNumber("987654322");
+        req.setAmount("10.00");
+        req.setCurrency("PEN");
+
+        StepVerifier.create(service.transfer(req, null, UUID.randomUUID()))
+                .expectError(WalletForbiddenException.class)
+                .verify();
+    }
+
+    @Test
+    void transferWithPhoneNotOwnedReturnsNotFound() {
+        WalletTransferRequest req = new WalletTransferRequest();
+        req.setTargetPhoneNumber("987654322");
+        req.setAmount("10.00");
+        req.setCurrency("PEN");
+        when(repository.findByPhoneNumber(anyString())).thenReturn(Mono.empty());
+
+        StepVerifier.create(service.transfer(req, "111111111", UUID.randomUUID()))
+                .expectError(WalletNotFoundException.class)
+                .verify();
+    }
+
+    @Test
+    void transferWithInactiveWalletReturnsForbidden() {
+        WalletTransferRequest req = new WalletTransferRequest();
+        req.setTargetPhoneNumber("987654322");
+        req.setAmount("10.00");
+        req.setCurrency("PEN");
+        when(repository.findByPhoneNumber(anyString()))
+                .thenReturn(Mono.just(doc("INACTIVE")));
+
+        StepVerifier.create(service.transfer(req, "987654321", UUID.randomUUID()))
+                .expectError(WalletForbiddenException.class)
+                .verify();
+    }
+
+    @Test
+    void transferActiveWalletDelegatesToTransactionService() {
+        WalletTransferRequest req = new WalletTransferRequest();
+        req.setTargetPhoneNumber("987654322");
+        req.setAmount("10.00");
+        req.setCurrency("PEN");
+        when(repository.findByPhoneNumber(anyString()))
+                .thenReturn(Mono.just(doc("ACTIVE")));
+        UUID operationId = UUID.randomUUID();
+        when(transactionServiceClient.createTransfer(any()))
+                .thenReturn(Mono.just(operationId));
+
+        StepVerifier.create(service.transfer(req, "987654321", UUID.randomUUID()))
+                .expectNext(operationId)
+                .verifyComplete();
+    }
+
+    @Test
+    void balanceWithoutCardUsesOwnBalance() {
+        when(repository.findByPhoneNumber(anyString()))
+                .thenReturn(Mono.just(doc("ACTIVE")));
+
+        StepVerifier.create(service.findBalance("987654321"))
+                .assertNext(r -> {
+                    org.junit.jupiter.api.Assertions.assertEquals("50.00",
+                            r.getBalance());
+                    org.junit.jupiter.api.Assertions.assertEquals("PEN",
+                            r.getCurrency());
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void balanceWithCardQueriesAccountService() {
+        WalletDocument withCard = doc("ACTIVE");
+        withCard.setLinkedDebitCardId(UUID.randomUUID());
+        when(repository.findByPhoneNumber(anyString()))
+                .thenReturn(Mono.just(withCard));
+        when(accountBalanceClient.getPrimaryAccountBalance(any(), anyString(), any()))
+                .thenReturn(Mono.just(new BigDecimal("100.50")));
+
+        StepVerifier.create(service.findBalance("987654321"))
+                .assertNext(r -> org.junit.jupiter.api.Assertions.assertEquals("100.50",
+                        r.getBalance()))
+                .verifyComplete();
+    }
+}
+=== src/main/resources/application.yml ===
+server:
+  port: 8087
+
+spring:
+  application:
+    name: ms-wallet-service
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://localhost:27017/banking_yanki}
+      auto-index-creation: true
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${JWT_ISSUER_URI:http://localhost:9000}
+
+eureka:
+  client:
+    enabled: false
+    register-with-eureka: false
+    fetch-registry: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+external:
+  services:
+    account-base-url: ${ACCOUNT_SERVICE_URL:http://localhost:8082}
+    card-base-url: ${CARD_SERVICE_URL:http://localhost:8084}
+    transaction-base-url: ${TRANSACTION_SERVICE_URL:http://localhost:8083}
+
+logging:
+  level:
+    com.banking.wallet: DEBUG
+=== src/main/resources/openapi/ms-wallet-service-openapi.yaml ===
+openapi: 3.0.3
+info:
+  title: Wallet Service API (Yanki)
+  description: Monedero móvil Yanki. No requiere ser cliente del banco. Las operaciones monetarias delegan a Transaction Service.
+  version: 1.0.0
+
+tags:
+  - name: Wallet
+    description: Operaciones de gestión del monedero Yanki
+
+security:
+  - BearerAuth: []
+paths:
+  /api/v1/wallets:
+    post:
+      tags:
+        - Wallet
+      summary: Registrar monedero Yanki
+      description: Idempotente mediante X-Transaction-ID. La autenticación de no-clientes se realiza mediante un token temporal emitido tras validar OTP al teléfono registrado. Devuelve 409 si el documento o el teléfono ya están registrados.
+      operationId: createWallet
+      parameters:
+        - $ref: '#/components/parameters/CorrelationIdHeader'
+        - $ref: '#/components/parameters/ChannelIdHeader'
+        - $ref: '#/components/parameters/TransactionIdHeader'
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/WalletCreateRequest' } } }
+      responses:
+        '201':
+          description: Monedero creado
+          content: { application/json: { schema: { $ref: '#/components/schemas/WalletResponse' } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+  /api/v1/wallets/{walletId}:
+    get:
+      tags:
+        - Wallet
+      summary: Obtener monedero
+      operationId: findWalletById
+      parameters:
+        - $ref: '#/components/parameters/WalletIdPath'
+        - $ref: '#/components/parameters/CorrelationIdHeader'
+        - $ref: '#/components/parameters/ChannelIdHeader'
+      responses:
+        '200':
+          description: Detalle del monedero
+          content: { application/json: { schema: { $ref: '#/components/schemas/WalletResponse' } } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+    patch:
+      tags:
+        - Wallet
+      summary: Actualizar monedero (parcial)
+      operationId: updateWallet
+      parameters:
+        - $ref: '#/components/parameters/WalletIdPath'
+        - $ref: '#/components/parameters/CorrelationIdHeader'
+        - $ref: '#/components/parameters/ChannelIdHeader'
+        - $ref: '#/components/parameters/TransactionIdHeader'
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/WalletUpdateRequest' } } }
+      responses:
+        '200':
+          description: Monedero actualizado
+          content: { application/json: { schema: { $ref: '#/components/schemas/WalletResponse' } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+    delete:
+      tags:
+        - Wallet
+      summary: Baja lógica del monedero
+      operationId: deactivateWallet
+      parameters:
+        - $ref: '#/components/parameters/WalletIdPath'
+        - $ref: '#/components/parameters/CorrelationIdHeader'
+        - $ref: '#/components/parameters/ChannelIdHeader'
+        - $ref: '#/components/parameters/TransactionIdHeader'
+      responses:
+        '204': { description: Monedero desactivado }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+  /api/v1/wallets/transfers:
+    post:
+      tags:
+        - Wallet
+      summary: Transferencia Yanki por número de celular
+      description: Idempotente mediante X-Transaction-ID. Delegado a Transaction Service para orquestación.
+      operationId: createWalletTransfer
+      parameters:
+        - $ref: '#/components/parameters/CorrelationIdHeader'
+        - $ref: '#/components/parameters/ChannelIdHeader'
+        - $ref: '#/components/parameters/TransactionIdHeader'
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/WalletTransferRequest' } } }
+      responses:
+        '202':
+          description: Transferencia aceptada
+          content: { application/json: { schema: { $ref: '#/components/schemas/OperationAcceptedResponse' } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+  /api/v1/wallets/balance:
+    get:
+      tags:
+        - Wallet
+      summary: Consultar saldo del monedero
+      operationId: findWalletBalance
+      parameters:
+        - name: phoneNumber
+          in: query
+          required: true
+          schema: { type: string, pattern: '^[0-9]{9,15}$' }
+        - $ref: '#/components/parameters/CorrelationIdHeader'
+        - $ref: '#/components/parameters/ChannelIdHeader'
+      responses:
+        '200':
+          description: Saldo del monedero
+          content: { application/json: { schema: { $ref: '#/components/schemas/BalanceResponse' } } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+
+components:
+  securitySchemes:
+    BearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  parameters:
+    CorrelationIdHeader: { name: X-Correlation-ID, in: header, required: true, schema: { type: string } }
+    ChannelIdHeader: { name: X-Channel-ID, in: header, required: true, schema: { type: string } }
+    TransactionIdHeader: { name: X-Transaction-ID, in: header, required: true, schema: { type: string, format: uuid } }
+    WalletIdPath: { name: walletId, in: path, required: true, schema: { type: string, format: uuid } }
+  schemas:
+    DocumentType: { type: string, enum: [DNI, CEX, PASSPORT] }
+    WalletStatus: { type: string, enum: [ACTIVE, INACTIVE] }
+    WalletCreateRequest:
+      type: object
+      required: [documentType, documentNumber, phoneNumber, email]
+      properties:
+        documentType: { $ref: '#/components/schemas/DocumentType' }
+        documentNumber: { type: string, minLength: 5, maxLength: 20 }
+        phoneNumber: { type: string, pattern: '^[0-9]{9,15}$' }
+        imei: { type: string, description: "Opcional, no confiable como credencial" }
+        email: { type: string, format: email }
+    WalletUpdateRequest:
+      type: object
+      properties:
+        linkedDebitCardId: { type: string, format: uuid }
+        status: { $ref: '#/components/schemas/WalletStatus' }
+    WalletTransferRequest:
+      type: object
+      required: [sourcePhoneNumber, targetPhoneNumber, amount, currency]
+      properties:
+        sourcePhoneNumber: { type: string, pattern: '^[0-9]{9,15}$' }
+        targetPhoneNumber: { type: string, pattern: '^[0-9]{9,15}$' }
+        amount: { type: string, pattern: '^(?!0+(\.0+)?$)[0-9]+(\.[0-9]{1,2})?$' }
+        currency: { type: string, pattern: '^[A-Z]{3}$' }
+    WalletResponse:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        phoneNumber: { type: string }
+        email: { type: string }
+        status: { $ref: '#/components/schemas/WalletStatus' }
+        linkedDebitCardId: { type: string, format: uuid }
+        balance: { type: string }
+        currency: { type: string }
+    BalanceResponse:
+      type: object
+      properties:
+        balance: { type: string }
+        currency: { type: string }
+    OperationAcceptedResponse:
+      type: object
+      properties:
+        operationId: { type: string, format: uuid }
+        status: { type: string }
+    ErrorResponse:
+      type: object
+      properties:
+        code: { type: string }
+        message: { type: string }
+        timestamp: { type: string, format: date-time }
+        correlationId: { type: string }
+        details: { type: array, items: { type: string } }
+  responses:
+    BadRequest:
+      description: Solicitud inválida
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
+    Unauthorized:
+      description: No autenticado
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
+    Forbidden:
+      description: No autorizado
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
+    NotFound:
+      description: No encontrado
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
+    Conflict:
+      description: Conflicto (ej. monedero duplicado por documento o teléfono)
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
+    UnprocessableEntity:
+      description: Entidad no procesable
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
+    InternalServerError:
+      description: Error interno
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }

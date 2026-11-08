@@ -13,18 +13,18 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.ReactiveSecurityContextHolder;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 /**
  * Implementacion del contrato OpenAPI (WalletApi). Reactivo con Reactor,
- * sin block(). El origen de la transferencia y el balance se derivan del JWT
- * autenticado, nunca del body ni del query.
+ * sin block().
+ *
+ * NOTA: Se elimino la validacion de identidad via JWT en los endpoints
+ * createWalletTransfer y findWalletBalance. Ahora el origen de la
+ * transferencia viaja en el body (sourcePhoneNumber) y el phoneNumber
+ * del balance viaja como query param. Esto es solo para pruebas locales.
  */
 @RestController
 <span class="nc" id="L30">@RequiredArgsConstructor</span>
@@ -72,35 +72,23 @@ public class WalletApiImpl implements WalletApi {
     public Mono&lt;ResponseEntity&lt;OperationAcceptedResponse&gt;&gt; createWalletTransfer(
             String xCorrelationID, String xChannelID, UUID xTransactionID,
             Mono&lt;WalletTransferRequest&gt; walletTransferRequest, ServerWebExchange exchange) {
-<span class="nc" id="L75">        return Mono.deferContextual(ctx -&gt; authenticatedPhoneNumber()</span>
-<span class="nc" id="L76">                .flatMap(phone -&gt; walletTransferRequest</span>
-<span class="nc" id="L77">                        .flatMap(req -&gt; walletService.transfer(req, phone, xTransactionID)))</span>
+<span class="nc" id="L75">        return walletTransferRequest</span>
+<span class="nc" id="L76">                .flatMap(req -&gt; walletService.transfer(</span>
+<span class="nc" id="L77">                        req, req.getSourcePhoneNumber(), xTransactionID))</span>
 <span class="nc" id="L78">                .map(operationId -&gt; {</span>
 <span class="nc" id="L79">                    OperationAcceptedResponse r = new OperationAcceptedResponse();</span>
 <span class="nc" id="L80">                    r.setOperationId(operationId);</span>
 <span class="nc" id="L81">                    r.setStatus(&quot;ACCEPTED&quot;);</span>
 <span class="nc" id="L82">                    return ResponseEntity.status(HttpStatus.ACCEPTED).body(r);</span>
-                }));
+                });
     }
 
     @Override
     public Mono&lt;ResponseEntity&lt;BalanceResponse&gt;&gt; findWalletBalance(
-            String xCorrelationID, String xChannelID, ServerWebExchange exchange) {
-<span class="nc" id="L89">        return authenticatedPhoneNumber()</span>
-<span class="nc" id="L90">                .flatMap(phone -&gt; walletService.findBalance(phone))</span>
+            String phoneNumber, String xCorrelationID, String xChannelID,
+            ServerWebExchange exchange) {
+<span class="nc" id="L90">        return walletService.findBalance(phoneNumber)</span>
 <span class="nc" id="L91">                .map(ResponseEntity::ok);</span>
-    }
-
-    private Mono&lt;String&gt; authenticatedPhoneNumber() {
-<span class="nc" id="L95">        return ReactiveSecurityContextHolder.getContext()</span>
-<span class="nc" id="L96">                .map(SecurityContext::getAuthentication)</span>
-<span class="nc" id="L97">                .filter(Authentication::isAuthenticated)</span>
-<span class="nc" id="L98">                .map(Authentication::getPrincipal)</span>
-<span class="nc" id="L99">                .filter(Jwt.class::isInstance)</span>
-<span class="nc" id="L100">                .map(Jwt.class::cast)</span>
-<span class="nc" id="L101">                .map(jwt -&gt; jwt.getClaimAsString(&quot;phone_number&quot;))</span>
-<span class="nc" id="L102">                .switchIfEmpty(Mono.error(new com.banking.wallet.exception.WalletForbiddenException(</span>
-                        &quot;Authenticated identity missing&quot;)));
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

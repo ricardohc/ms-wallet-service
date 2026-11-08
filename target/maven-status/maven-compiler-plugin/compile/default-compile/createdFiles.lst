@@ -7,6 +7,7 @@ com\banking\wallet\dto\WalletUpdateRequest.class
 com\banking\wallet\dto\WalletResponse.class
 com\banking\wallet\dto\WalletStatus.class
 com\banking\wallet\exception\WalletForbiddenException.class
+com\banking\wallet\exception\BadRequestException.class
 com\banking\wallet\mapper\WalletMapper.class
 com\banking\wallet\client\AccountValidationClient.class
 com\banking\wallet\dto\WalletCreateRequest.class

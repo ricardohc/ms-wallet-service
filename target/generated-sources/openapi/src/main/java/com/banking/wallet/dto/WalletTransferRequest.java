@@ -18,8 +18,10 @@ import jakarta.annotation.Generated;
  * WalletTransferRequest
  */
 
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-11-08T17:28:25.351102900-05:00[America/Lima]", comments = "Generator version: 7.6.0")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-11-08T18:08:46.498479-05:00[America/Lima]", comments = "Generator version: 7.6.0")
 public class WalletTransferRequest {
+
+  private String sourcePhoneNumber;
 
   private String targetPhoneNumber;
 
@@ -34,10 +36,31 @@ public class WalletTransferRequest {
   /**
    * Constructor with only required parameters
    */
-  public WalletTransferRequest(String targetPhoneNumber, String amount, String currency) {
+  public WalletTransferRequest(String sourcePhoneNumber, String targetPhoneNumber, String amount, String currency) {
+    this.sourcePhoneNumber = sourcePhoneNumber;
     this.targetPhoneNumber = targetPhoneNumber;
     this.amount = amount;
     this.currency = currency;
+  }
+
+  public WalletTransferRequest sourcePhoneNumber(String sourcePhoneNumber) {
+    this.sourcePhoneNumber = sourcePhoneNumber;
+    return this;
+  }
+
+  /**
+   * Get sourcePhoneNumber
+   * @return sourcePhoneNumber
+  */
+  @NotNull @Pattern(regexp = "^[0-9]{9,15}$") 
+  @Schema(name = "sourcePhoneNumber", requiredMode = Schema.RequiredMode.REQUIRED)
+  @JsonProperty("sourcePhoneNumber")
+  public String getSourcePhoneNumber() {
+    return sourcePhoneNumber;
+  }
+
+  public void setSourcePhoneNumber(String sourcePhoneNumber) {
+    this.sourcePhoneNumber = sourcePhoneNumber;
   }
 
   public WalletTransferRequest targetPhoneNumber(String targetPhoneNumber) {
@@ -109,20 +132,22 @@ public class WalletTransferRequest {
       return false;
     }
     WalletTransferRequest walletTransferRequest = (WalletTransferRequest) o;
-    return Objects.equals(this.targetPhoneNumber, walletTransferRequest.targetPhoneNumber) &&
+    return Objects.equals(this.sourcePhoneNumber, walletTransferRequest.sourcePhoneNumber) &&
+        Objects.equals(this.targetPhoneNumber, walletTransferRequest.targetPhoneNumber) &&
         Objects.equals(this.amount, walletTransferRequest.amount) &&
         Objects.equals(this.currency, walletTransferRequest.currency);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(targetPhoneNumber, amount, currency);
+    return Objects.hash(sourcePhoneNumber, targetPhoneNumber, amount, currency);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
     sb.append("class WalletTransferRequest {\n");
+    sb.append("    sourcePhoneNumber: ").append(toIndentedString(sourcePhoneNumber)).append("\n");
     sb.append("    targetPhoneNumber: ").append(toIndentedString(targetPhoneNumber)).append("\n");
     sb.append("    amount: ").append(toIndentedString(amount)).append("\n");
     sb.append("    currency: ").append(toIndentedString(currency)).append("\n");

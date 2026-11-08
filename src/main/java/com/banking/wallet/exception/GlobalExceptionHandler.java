@@ -43,6 +43,13 @@ public class GlobalExceptionHandler {
                 exchange, List.of(detail));
     }
 
+    @ExceptionHandler(BadRequestException.class)
+    public Mono<ResponseEntity<ErrorResponse>> handleBadRequest(
+            BadRequestException ex, ServerWebExchange exchange) {
+        return build(HttpStatus.BAD_REQUEST, "WALLET-400", ex.getMessage(),
+                exchange, null);
+    }
+
     @ExceptionHandler(WalletNotFoundException.class)
     public Mono<ResponseEntity<ErrorResponse>> handleNotFound(
             WalletNotFoundException ex, ServerWebExchange exchange) {

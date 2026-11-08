@@ -9,6 +9,7 @@ import com.banking.wallet.dto.WalletResponse;
 import com.banking.wallet.dto.WalletStatus;
 import com.banking.wallet.dto.WalletTransferRequest;
 import com.banking.wallet.dto.WalletUpdateRequest;
+import com.banking.wallet.exception.BadRequestException;
 import com.banking.wallet.exception.WalletConflictException;
 import com.banking.wallet.exception.WalletForbiddenException;
 import com.banking.wallet.exception.WalletNotFoundException;
@@ -32,12 +33,13 @@ import reactor.core.publisher.Mono;
  * Logica de negocio del monedero Yanki.
  * Reglas: unicidad documento/telefono, saldo propio sin tarjeta (fuente de
  * verdad), con tarjeta balance local = 0.00 y fuente de verdad ms-account.
- * Origen de transferencia siempre derivado de JWT.
  */
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class WalletServiceImpl implements WalletService {
+
+    private static final String SUPPORTED_CURRENCY = "PEN";
 
     private final WalletRepository repository;
     private final WalletMapper mapper;
@@ -123,21 +125,60 @@ public class WalletServiceImpl implements WalletService {
     }
 
     @Override
-    public Mono<UUID> transfer(WalletTransferRequest request, String authenticatedPhoneNumber,
+    public Mono<UUID> transfer(WalletTransferRequest request, String sourcePhoneNumber,
                                UUID transactionId) {
-        if (authenticatedPhoneNumber == null || authenticatedPhoneNumber.isBlank()) {
-            return Mono.error(new WalletForbiddenException(
-                    "Authenticated identity missing; source wallet cannot be derived"));
-        }
-        return repository.findByPhoneNumber(authenticatedPhoneNumber)
-                .switchIfEmpty(Mono.error(new WalletNotFoundException(
-                        "Source wallet not found for authenticated phone")))
-                .flatMap(source -> {
-                    if (!WalletStatus.ACTIVE.getValue().equals(source.getStatus())) {
-                        return Mono.error(new WalletForbiddenException("Wallet is not active"));
-                    }
-                    return delegateTransfer(source, request, transactionId);
-                });
+        return Mono.defer(() -> {
+            // --- Validacion 1: moneda soportada -> 400 ---
+            if (request.getCurrency() == null
+                    || !SUPPORTED_CURRENCY.equalsIgnoreCase(request.getCurrency())) {
+                return Mono.error(new BadRequestException(
+                        "Unsupported currency. Only PEN is allowed"));
+            }
+
+            // --- Validacion 2: source no nulo -> 400 ---
+            if (sourcePhoneNumber == null || sourcePhoneNumber.isBlank()) {
+                return Mono.error(new BadRequestException(
+                        "Source phone number is required"));
+            }
+
+            // --- Validacion 3: source != target -> 400 ---
+            if (sourcePhoneNumber.equals(request.getTargetPhoneNumber())) {
+                return Mono.error(new BadRequestException(
+                        "Source phone number and target phone number cannot be the same"));
+            }
+
+            BigDecimal amount = new BigDecimal(request.getAmount());
+
+            // --- Buscamos el wallet origen ---
+            return repository.findByPhoneNumber(sourcePhoneNumber)
+                    .switchIfEmpty(Mono.error(new WalletNotFoundException(
+                            "Source wallet not found for phone number")))
+                    .flatMap(source -> {
+                        if (!WalletStatus.ACTIVE.getValue().equals(source.getStatus())) {
+                            return Mono.error(new WalletForbiddenException(
+                                    "Wallet is not active"));
+                        }
+
+                        // --- Validacion 4: fondos suficientes -> 422 ---
+                        Mono<BigDecimal> balanceMono;
+                        if (source.getLinkedDebitCardId() != null) {
+                            balanceMono = accountBalanceClient
+                                    .getPrimaryAccountBalance(source.getWalletUuid(),
+                                            source.getLinkedDebitCardId().toString(), null);
+                        } else {
+                            balanceMono = Mono.just(source.getBalance() == null
+                                    ? BigDecimal.ZERO : source.getBalance());
+                        }
+
+                        return balanceMono.flatMap(balance -> {
+                            if (balance.compareTo(amount) < 0) {
+                                return Mono.error(new WalletUnprocessableException(
+                                        "Insufficient funds in source wallet"));
+                            }
+                            return delegateTransfer(source, request, transactionId);
+                        });
+                    });
+        });
     }
 
     private Mono<UUID> delegateTransfer(WalletDocument source, WalletTransferRequest request,
@@ -157,7 +198,7 @@ public class WalletServiceImpl implements WalletService {
             String authenticatedPhoneNumber) {
         return repository.findByPhoneNumber(authenticatedPhoneNumber)
                 .switchIfEmpty(Mono.error(new WalletNotFoundException(
-                        "Wallet not found for authenticated phone")))
+                        "Wallet not found for phone number")))
                 .flatMap(doc -> {
                     if (doc.getLinkedDebitCardId() != null) {
                         return accountBalanceClient

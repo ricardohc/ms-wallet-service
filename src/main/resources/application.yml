@@ -4,6 +4,8 @@ server:
 spring:
   application:
     name: ms-wallet-service
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
 
   data:
     mongodb:

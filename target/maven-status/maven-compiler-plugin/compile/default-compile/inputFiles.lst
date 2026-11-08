@@ -11,6 +11,7 @@ C:\Users\USWE\Downloads\PROYECTO FINAL ENTREGA\WORKSPACE\ms-wallet-service\src\m
 C:\Users\USWE\Downloads\PROYECTO FINAL ENTREGA\WORKSPACE\ms-wallet-service\src\main\java\com\banking\wallet\document\WalletDocument.java
 C:\Users\USWE\Downloads\PROYECTO FINAL ENTREGA\WORKSPACE\ms-wallet-service\src\main\java\com\banking\wallet\event\WalletEvent.java
 C:\Users\USWE\Downloads\PROYECTO FINAL ENTREGA\WORKSPACE\ms-wallet-service\src\main\java\com\banking\wallet\event\WalletEventPublisher.java
+C:\Users\USWE\Downloads\PROYECTO FINAL ENTREGA\WORKSPACE\ms-wallet-service\src\main\java\com\banking\wallet\exception\BadRequestException.java
 C:\Users\USWE\Downloads\PROYECTO FINAL ENTREGA\WORKSPACE\ms-wallet-service\src\main\java\com\banking\wallet\exception\GlobalExceptionHandler.java
 C:\Users\USWE\Downloads\PROYECTO FINAL ENTREGA\WORKSPACE\ms-wallet-service\src\main\java\com\banking\wallet\exception\WalletConflictException.java
 C:\Users\USWE\Downloads\PROYECTO FINAL ENTREGA\WORKSPACE\ms-wallet-service\src\main\java\com\banking\wallet\exception\WalletForbiddenException.java

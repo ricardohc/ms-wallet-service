@@ -96,8 +96,8 @@ paths:
     post:
       tags:
         - Wallet
-      summary: Transferencia Yanki por número de celular (Origen desde JWT)
-      description: Idempotente mediante X-Transaction-ID. Delegado a Transaction Service para orquestación. El origen se obtiene del token autenticado, no del request.
+      summary: Transferencia Yanki por número de celular
+      description: Idempotente mediante X-Transaction-ID. Delegado a Transaction Service para orquestación.
       operationId: createWalletTransfer
       parameters:
         - $ref: '#/components/parameters/CorrelationIdHeader'
@@ -121,10 +121,13 @@ paths:
     get:
       tags:
         - Wallet
-      summary: Consultar saldo del monedero (del usuario autenticado)
-      description: No requiere phoneNumber en query, se toma de la identidad autenticada.
+      summary: Consultar saldo del monedero
       operationId: findWalletBalance
       parameters:
+        - name: phoneNumber
+          in: query
+          required: true
+          schema: { type: string, pattern: '^[0-9]{9,15}$' }
         - $ref: '#/components/parameters/CorrelationIdHeader'
         - $ref: '#/components/parameters/ChannelIdHeader'
       responses:
@@ -162,8 +165,9 @@ components:
         status: { $ref: '#/components/schemas/WalletStatus' }
     WalletTransferRequest:
       type: object
-      required: [targetPhoneNumber, amount, currency]
+      required: [sourcePhoneNumber, targetPhoneNumber, amount, currency]
       properties:
+        sourcePhoneNumber: { type: string, pattern: '^[0-9]{9,15}$' }
         targetPhoneNumber: { type: string, pattern: '^[0-9]{9,15}$' }
         amount: { type: string, pattern: '^(?!0+(\.0+)?$)[0-9]+(\.[0-9]{1,2})?$' }
         currency: { type: string, pattern: '^[A-Z]{3}$' }

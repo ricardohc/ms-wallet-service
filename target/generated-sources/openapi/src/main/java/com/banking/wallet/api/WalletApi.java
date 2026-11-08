@@ -42,7 +42,7 @@ import java.util.Map;
 import java.util.Optional;
 import jakarta.annotation.Generated;
 
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-11-08T17:28:25.351102900-05:00[America/Lima]", comments = "Generator version: 7.6.0")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-11-08T18:08:46.498479-05:00[America/Lima]", comments = "Generator version: 7.6.0")
 @Validated
 @Tag(name = "Wallet", description = "Operaciones de gestión del monedero Yanki")
 public interface WalletApi {
@@ -112,8 +112,8 @@ public interface WalletApi {
 
 
     /**
-     * POST /api/v1/wallets/transfers : Transferencia Yanki por número de celular (Origen desde JWT)
-     * Idempotente mediante X-Transaction-ID. Delegado a Transaction Service para orquestación. El origen se obtiene del token autenticado, no del request.
+     * POST /api/v1/wallets/transfers : Transferencia Yanki por número de celular
+     * Idempotente mediante X-Transaction-ID. Delegado a Transaction Service para orquestación.
      *
      * @param xCorrelationID  (required)
      * @param xChannelID  (required)
@@ -130,8 +130,8 @@ public interface WalletApi {
      */
     @Operation(
         operationId = "createWalletTransfer",
-        summary = "Transferencia Yanki por número de celular (Origen desde JWT)",
-        description = "Idempotente mediante X-Transaction-ID. Delegado a Transaction Service para orquestación. El origen se obtiene del token autenticado, no del request.",
+        summary = "Transferencia Yanki por número de celular",
+        description = "Idempotente mediante X-Transaction-ID. Delegado a Transaction Service para orquestación.",
         tags = { "Wallet" },
         responses = {
             @ApiResponse(responseCode = "202", description = "Transferencia aceptada", content = {
@@ -231,9 +231,9 @@ public interface WalletApi {
 
 
     /**
-     * GET /api/v1/wallets/balance : Consultar saldo del monedero (del usuario autenticado)
-     * No requiere phoneNumber en query, se toma de la identidad autenticada.
+     * GET /api/v1/wallets/balance : Consultar saldo del monedero
      *
+     * @param phoneNumber  (required)
      * @param xCorrelationID  (required)
      * @param xChannelID  (required)
      * @return Saldo del monedero (status code 200)
@@ -243,8 +243,7 @@ public interface WalletApi {
      */
     @Operation(
         operationId = "findWalletBalance",
-        summary = "Consultar saldo del monedero (del usuario autenticado)",
-        description = "No requiere phoneNumber en query, se toma de la identidad autenticada.",
+        summary = "Consultar saldo del monedero",
         tags = { "Wallet" },
         responses = {
             @ApiResponse(responseCode = "200", description = "Saldo del monedero", content = {
@@ -271,6 +270,7 @@ public interface WalletApi {
     )
     
     Mono<ResponseEntity<BalanceResponse>> findWalletBalance(
+        @NotNull @Pattern(regexp = "^[0-9]{9,15}$") @Parameter(name = "phoneNumber", description = "", required = true, in = ParameterIn.QUERY) @Valid @RequestParam(value = "phoneNumber", required = true) String phoneNumber,
         @NotNull @Parameter(name = "X-Correlation-ID", description = "", required = true, in = ParameterIn.HEADER) @RequestHeader(value = "X-Correlation-ID", required = true) String xCorrelationID,
         @NotNull @Parameter(name = "X-Channel-ID", description = "", required = true, in = ParameterIn.HEADER) @RequestHeader(value = "X-Channel-ID", required = true) String xChannelID,
         @Parameter(hidden = true) final ServerWebExchange exchange

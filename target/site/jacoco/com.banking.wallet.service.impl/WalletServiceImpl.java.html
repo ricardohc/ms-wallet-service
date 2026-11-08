@@ -9,6 +9,7 @@ import com.banking.wallet.dto.WalletResponse;
 import com.banking.wallet.dto.WalletStatus;
 import com.banking.wallet.dto.WalletTransferRequest;
 import com.banking.wallet.dto.WalletUpdateRequest;
+import com.banking.wallet.exception.BadRequestException;
 import com.banking.wallet.exception.WalletConflictException;
 import com.banking.wallet.exception.WalletForbiddenException;
 import com.banking.wallet.exception.WalletNotFoundException;
@@ -32,12 +33,13 @@ import reactor.core.publisher.Mono;
  * Logica de negocio del monedero Yanki.
  * Reglas: unicidad documento/telefono, saldo propio sin tarjeta (fuente de
  * verdad), con tarjeta balance local = 0.00 y fuente de verdad ms-account.
- * Origen de transferencia siempre derivado de JWT.
  */
 @Service
 <span class="fc" id="L38">@RequiredArgsConstructor</span>
 <span class="fc" id="L39">@Slf4j</span>
 public class WalletServiceImpl implements WalletService {
+
+    private static final String SUPPORTED_CURRENCY = &quot;PEN&quot;;
 
     private final WalletRepository repository;
     private final WalletMapper mapper;
@@ -48,144 +50,183 @@ public class WalletServiceImpl implements WalletService {
 
     @Override
     public Mono&lt;WalletResponse&gt; create(WalletCreateRequest request, UUID transactionId) {
-<span class="fc" id="L51">        return repository.existsByDocumentTypeAndDocumentNumber(</span>
-<span class="fc" id="L52">                        request.getDocumentType().getValue(), request.getDocumentNumber())</span>
-<span class="fc bfc" id="L53" title="All 2 branches covered.">                .flatMap(exists -&gt; exists</span>
-<span class="fc" id="L54">                        ? Mono.error(new WalletConflictException(</span>
+<span class="fc" id="L53">        return repository.existsByDocumentTypeAndDocumentNumber(</span>
+<span class="fc" id="L54">                        request.getDocumentType().getValue(), request.getDocumentNumber())</span>
+<span class="fc bfc" id="L55" title="All 2 branches covered.">                .flatMap(exists -&gt; exists</span>
+<span class="fc" id="L56">                        ? Mono.error(new WalletConflictException(</span>
                         &quot;Wallet already exists for document&quot;))
-<span class="fc" id="L56">                        : repository.existsByPhoneNumber(request.getPhoneNumber()))</span>
-<span class="fc bfc" id="L57" title="All 2 branches covered.">                .flatMap(phoneExists -&gt; phoneExists</span>
-<span class="fc" id="L58">                        ? Mono.error(new WalletConflictException(</span>
+<span class="fc" id="L58">                        : repository.existsByPhoneNumber(request.getPhoneNumber()))</span>
+<span class="fc bfc" id="L59" title="All 2 branches covered.">                .flatMap(phoneExists -&gt; phoneExists</span>
+<span class="fc" id="L60">                        ? Mono.error(new WalletConflictException(</span>
                         &quot;Wallet already exists for phone number&quot;))
-<span class="fc" id="L60">                        : persistNewWallet(request, transactionId))</span>
-<span class="fc" id="L61">                .onErrorResume(DuplicateKeyException.class,</span>
-<span class="nc" id="L62">                        e -&gt; Mono.error(new WalletConflictException(</span>
+<span class="fc" id="L62">                        : persistNewWallet(request, transactionId))</span>
+<span class="fc" id="L63">                .onErrorResume(DuplicateKeyException.class,</span>
+<span class="nc" id="L64">                        e -&gt; Mono.error(new WalletConflictException(</span>
                                 &quot;Wallet already exists for document or phone&quot;)));
     }
 
     private Mono&lt;WalletResponse&gt; persistNewWallet(WalletCreateRequest request, UUID transactionId) {
-<span class="fc" id="L67">        WalletDocument doc = mapper.newWallet(</span>
-<span class="fc" id="L68">                request.getDocumentType().getValue(),</span>
-<span class="fc" id="L69">                request.getDocumentNumber(),</span>
-<span class="fc" id="L70">                request.getPhoneNumber(),</span>
-<span class="fc" id="L71">                request.getImei(),</span>
-<span class="fc" id="L72">                request.getEmail());</span>
-<span class="fc" id="L73">        return repository.save(doc)</span>
-<span class="fc" id="L74">                .flatMap(saved -&gt; publishEvent(&quot;WalletCreated&quot;, saved)</span>
-<span class="fc" id="L75">                        .thenReturn(mapper.toResponse(saved)))</span>
-<span class="fc" id="L76">                .doOnSuccess(r -&gt; log.info(&quot;Wallet created txId={}&quot;, transactionId));</span>
+<span class="fc" id="L69">        WalletDocument doc = mapper.newWallet(</span>
+<span class="fc" id="L70">                request.getDocumentType().getValue(),</span>
+<span class="fc" id="L71">                request.getDocumentNumber(),</span>
+<span class="fc" id="L72">                request.getPhoneNumber(),</span>
+<span class="fc" id="L73">                request.getImei(),</span>
+<span class="fc" id="L74">                request.getEmail());</span>
+<span class="fc" id="L75">        return repository.save(doc)</span>
+<span class="fc" id="L76">                .flatMap(saved -&gt; publishEvent(&quot;WalletCreated&quot;, saved)</span>
+<span class="fc" id="L77">                        .thenReturn(mapper.toResponse(saved)))</span>
+<span class="fc" id="L78">                .doOnSuccess(r -&gt; log.info(&quot;Wallet created txId={}&quot;, transactionId));</span>
     }
 
     @Override
     public Mono&lt;WalletResponse&gt; findById(UUID walletId) {
-<span class="nc" id="L81">        return repository.findByWalletUuid(walletId)</span>
-<span class="nc" id="L82">                .switchIfEmpty(Mono.error(new WalletNotFoundException(&quot;Wallet not found&quot;)))</span>
-<span class="nc" id="L83">                .map(mapper::toResponse);</span>
+<span class="nc" id="L83">        return repository.findByWalletUuid(walletId)</span>
+<span class="nc" id="L84">                .switchIfEmpty(Mono.error(new WalletNotFoundException(&quot;Wallet not found&quot;)))</span>
+<span class="nc" id="L85">                .map(mapper::toResponse);</span>
     }
 
     @Override
     public Mono&lt;WalletResponse&gt; update(UUID walletId, WalletUpdateRequest request,
                                        UUID transactionId) {
-<span class="nc" id="L89">        return repository.findByWalletUuid(walletId)</span>
-<span class="nc" id="L90">                .switchIfEmpty(Mono.error(new WalletNotFoundException(&quot;Wallet not found&quot;)))</span>
-<span class="nc" id="L91">                .flatMap(doc -&gt; applyUpdate(doc, request))</span>
-<span class="nc" id="L92">                .flatMap(repository::save)</span>
-<span class="nc" id="L93">                .flatMap(saved -&gt; publishEvent(&quot;WalletUpdated&quot;, saved)</span>
-<span class="nc" id="L94">                        .thenReturn(mapper.toResponse(saved)));</span>
+<span class="nc" id="L91">        return repository.findByWalletUuid(walletId)</span>
+<span class="nc" id="L92">                .switchIfEmpty(Mono.error(new WalletNotFoundException(&quot;Wallet not found&quot;)))</span>
+<span class="nc" id="L93">                .flatMap(doc -&gt; applyUpdate(doc, request))</span>
+<span class="nc" id="L94">                .flatMap(repository::save)</span>
+<span class="nc" id="L95">                .flatMap(saved -&gt; publishEvent(&quot;WalletUpdated&quot;, saved)</span>
+<span class="nc" id="L96">                        .thenReturn(mapper.toResponse(saved)));</span>
     }
 
     private Mono&lt;WalletDocument&gt; applyUpdate(WalletDocument doc, WalletUpdateRequest request) {
-<span class="nc bnc" id="L98" title="All 2 branches missed.">        if (request.getLinkedDebitCardId() != null) {</span>
-<span class="nc" id="L99">            return accountValidationClient.validateLinkableAccount(request.getLinkedDebitCardId())</span>
-<span class="nc" id="L100">                    .thenReturn(withLinkedCard(doc, request.getLinkedDebitCardId()));</span>
+<span class="nc bnc" id="L100" title="All 2 branches missed.">        if (request.getLinkedDebitCardId() != null) {</span>
+<span class="nc" id="L101">            return accountValidationClient.validateLinkableAccount(request.getLinkedDebitCardId())</span>
+<span class="nc" id="L102">                    .thenReturn(withLinkedCard(doc, request.getLinkedDebitCardId()));</span>
         }
-<span class="nc bnc" id="L102" title="All 2 branches missed.">        if (request.getStatus() != null) {</span>
-<span class="nc" id="L103">            doc.setStatus(request.getStatus().getValue());</span>
+<span class="nc bnc" id="L104" title="All 2 branches missed.">        if (request.getStatus() != null) {</span>
+<span class="nc" id="L105">            doc.setStatus(request.getStatus().getValue());</span>
         }
-<span class="nc" id="L105">        return Mono.just(doc);</span>
+<span class="nc" id="L107">        return Mono.just(doc);</span>
     }
 
     private WalletDocument withLinkedCard(WalletDocument doc, UUID cardId) {
-<span class="nc" id="L109">        doc.setLinkedDebitCardId(cardId);</span>
-<span class="nc" id="L110">        doc.setBalance(new BigDecimal(&quot;0.00&quot;));</span>
-<span class="nc" id="L111">        return doc;</span>
+<span class="nc" id="L111">        doc.setLinkedDebitCardId(cardId);</span>
+<span class="nc" id="L112">        doc.setBalance(new BigDecimal(&quot;0.00&quot;));</span>
+<span class="nc" id="L113">        return doc;</span>
     }
 
     @Override
     public Mono&lt;Void&gt; deactivate(UUID walletId, UUID transactionId) {
-<span class="nc" id="L116">        return repository.findByWalletUuid(walletId)</span>
-<span class="nc" id="L117">                .switchIfEmpty(Mono.error(new WalletNotFoundException(&quot;Wallet not found&quot;)))</span>
-<span class="nc" id="L118">                .flatMap(doc -&gt; {</span>
-<span class="nc" id="L119">                    doc.setStatus(WalletStatus.INACTIVE.getValue());</span>
-<span class="nc" id="L120">                    return repository.save(doc)</span>
-<span class="nc" id="L121">                            .then(publishEvent(&quot;WalletDeactivated&quot;, doc));</span>
+<span class="nc" id="L118">        return repository.findByWalletUuid(walletId)</span>
+<span class="nc" id="L119">                .switchIfEmpty(Mono.error(new WalletNotFoundException(&quot;Wallet not found&quot;)))</span>
+<span class="nc" id="L120">                .flatMap(doc -&gt; {</span>
+<span class="nc" id="L121">                    doc.setStatus(WalletStatus.INACTIVE.getValue());</span>
+<span class="nc" id="L122">                    return repository.save(doc)</span>
+<span class="nc" id="L123">                            .then(publishEvent(&quot;WalletDeactivated&quot;, doc));</span>
                 });
     }
 
     @Override
-    public Mono&lt;UUID&gt; transfer(WalletTransferRequest request, String authenticatedPhoneNumber,
+    public Mono&lt;UUID&gt; transfer(WalletTransferRequest request, String sourcePhoneNumber,
                                UUID transactionId) {
-<span class="pc bpc" id="L128" title="1 of 4 branches missed.">        if (authenticatedPhoneNumber == null || authenticatedPhoneNumber.isBlank()) {</span>
-<span class="fc" id="L129">            return Mono.error(new WalletForbiddenException(</span>
-                    &quot;Authenticated identity missing; source wallet cannot be derived&quot;));
-        }
-<span class="fc" id="L132">        return repository.findByPhoneNumber(authenticatedPhoneNumber)</span>
-<span class="fc" id="L133">                .switchIfEmpty(Mono.error(new WalletNotFoundException(</span>
-                        &quot;Source wallet not found for authenticated phone&quot;)))
-<span class="fc" id="L135">                .flatMap(source -&gt; {</span>
-<span class="fc bfc" id="L136" title="All 2 branches covered.">                    if (!WalletStatus.ACTIVE.getValue().equals(source.getStatus())) {</span>
-<span class="fc" id="L137">                        return Mono.error(new WalletForbiddenException(&quot;Wallet is not active&quot;));</span>
-                    }
-<span class="fc" id="L139">                    return delegateTransfer(source, request, transactionId);</span>
-                });
+<span class="fc" id="L130">        return Mono.defer(() -&gt; {</span>
+            // --- Validacion 1: moneda soportada -&gt; 400 ---
+<span class="pc bpc" id="L132" title="1 of 2 branches missed.">            if (request.getCurrency() == null</span>
+<span class="fc bfc" id="L133" title="All 2 branches covered.">                    || !SUPPORTED_CURRENCY.equalsIgnoreCase(request.getCurrency())) {</span>
+<span class="fc" id="L134">                return Mono.error(new BadRequestException(</span>
+                        &quot;Unsupported currency. Only PEN is allowed&quot;));
+            }
+
+            // --- Validacion 2: source no nulo -&gt; 400 ---
+<span class="pc bpc" id="L139" title="1 of 4 branches missed.">            if (sourcePhoneNumber == null || sourcePhoneNumber.isBlank()) {</span>
+<span class="fc" id="L140">                return Mono.error(new BadRequestException(</span>
+                        &quot;Source phone number is required&quot;));
+            }
+
+            // --- Validacion 3: source != target -&gt; 400 ---
+<span class="fc bfc" id="L145" title="All 2 branches covered.">            if (sourcePhoneNumber.equals(request.getTargetPhoneNumber())) {</span>
+<span class="fc" id="L146">                return Mono.error(new BadRequestException(</span>
+                        &quot;Source phone number and target phone number cannot be the same&quot;));
+            }
+
+<span class="fc" id="L150">            BigDecimal amount = new BigDecimal(request.getAmount());</span>
+
+            // --- Buscamos el wallet origen ---
+<span class="fc" id="L153">            return repository.findByPhoneNumber(sourcePhoneNumber)</span>
+<span class="fc" id="L154">                    .switchIfEmpty(Mono.error(new WalletNotFoundException(</span>
+                            &quot;Source wallet not found for phone number&quot;)))
+<span class="fc" id="L156">                    .flatMap(source -&gt; {</span>
+<span class="fc bfc" id="L157" title="All 2 branches covered.">                        if (!WalletStatus.ACTIVE.getValue().equals(source.getStatus())) {</span>
+<span class="fc" id="L158">                            return Mono.error(new WalletForbiddenException(</span>
+                                    &quot;Wallet is not active&quot;));
+                        }
+
+                        // --- Validacion 4: fondos suficientes -&gt; 422 ---
+                        Mono&lt;BigDecimal&gt; balanceMono;
+<span class="pc bpc" id="L164" title="1 of 2 branches missed.">                        if (source.getLinkedDebitCardId() != null) {</span>
+<span class="nc" id="L165">                            balanceMono = accountBalanceClient</span>
+<span class="nc" id="L166">                                    .getPrimaryAccountBalance(source.getWalletUuid(),</span>
+<span class="nc" id="L167">                                            source.getLinkedDebitCardId().toString(), null);</span>
+                        } else {
+<span class="pc bpc" id="L169" title="1 of 2 branches missed.">                            balanceMono = Mono.just(source.getBalance() == null</span>
+<span class="pc" id="L170">                                    ? BigDecimal.ZERO : source.getBalance());</span>
+                        }
+
+<span class="fc" id="L173">                        return balanceMono.flatMap(balance -&gt; {</span>
+<span class="fc bfc" id="L174" title="All 2 branches covered.">                            if (balance.compareTo(amount) &lt; 0) {</span>
+<span class="fc" id="L175">                                return Mono.error(new WalletUnprocessableException(</span>
+                                        &quot;Insufficient funds in source wallet&quot;));
+                            }
+<span class="fc" id="L178">                            return delegateTransfer(source, request, transactionId);</span>
+                        });
+                    });
+        });
     }
 
     private Mono&lt;UUID&gt; delegateTransfer(WalletDocument source, WalletTransferRequest request,
                                         UUID transactionId) {
-<span class="fc" id="L145">        WalletTransferCommand command = WalletTransferCommand.builder()</span>
-<span class="fc" id="L146">                .transactionId(transactionId)</span>
-<span class="fc" id="L147">                .sourceWalletId(source.getWalletUuid())</span>
-<span class="fc" id="L148">                .targetPhoneNumber(request.getTargetPhoneNumber())</span>
-<span class="fc" id="L149">                .amount(new BigDecimal(request.getAmount()))</span>
-<span class="fc" id="L150">                .currency(request.getCurrency())</span>
-<span class="fc" id="L151">                .build();</span>
-<span class="fc" id="L152">        return transactionServiceClient.createTransfer(command);</span>
+<span class="fc" id="L186">        WalletTransferCommand command = WalletTransferCommand.builder()</span>
+<span class="fc" id="L187">                .transactionId(transactionId)</span>
+<span class="fc" id="L188">                .sourceWalletId(source.getWalletUuid())</span>
+<span class="fc" id="L189">                .targetPhoneNumber(request.getTargetPhoneNumber())</span>
+<span class="fc" id="L190">                .amount(new BigDecimal(request.getAmount()))</span>
+<span class="fc" id="L191">                .currency(request.getCurrency())</span>
+<span class="fc" id="L192">                .build();</span>
+<span class="fc" id="L193">        return transactionServiceClient.createTransfer(command);</span>
     }
 
     @Override
     public Mono&lt;com.banking.wallet.dto.BalanceResponse&gt; findBalance(
             String authenticatedPhoneNumber) {
-<span class="fc" id="L158">        return repository.findByPhoneNumber(authenticatedPhoneNumber)</span>
-<span class="fc" id="L159">                .switchIfEmpty(Mono.error(new WalletNotFoundException(</span>
-                        &quot;Wallet not found for authenticated phone&quot;)))
-<span class="fc" id="L161">                .flatMap(doc -&gt; {</span>
-<span class="fc bfc" id="L162" title="All 2 branches covered.">                    if (doc.getLinkedDebitCardId() != null) {</span>
-<span class="fc" id="L163">                        return accountBalanceClient</span>
-<span class="fc" id="L164">                                .getPrimaryAccountBalance(doc.getWalletUuid(),</span>
-<span class="fc" id="L165">                                        doc.getLinkedDebitCardId().toString(), null)</span>
-<span class="fc" id="L166">                                .map(balance -&gt; toBalance(balance, doc.getCurrency()));</span>
+<span class="fc" id="L199">        return repository.findByPhoneNumber(authenticatedPhoneNumber)</span>
+<span class="fc" id="L200">                .switchIfEmpty(Mono.error(new WalletNotFoundException(</span>
+                        &quot;Wallet not found for phone number&quot;)))
+<span class="fc" id="L202">                .flatMap(doc -&gt; {</span>
+<span class="fc bfc" id="L203" title="All 2 branches covered.">                    if (doc.getLinkedDebitCardId() != null) {</span>
+<span class="fc" id="L204">                        return accountBalanceClient</span>
+<span class="fc" id="L205">                                .getPrimaryAccountBalance(doc.getWalletUuid(),</span>
+<span class="fc" id="L206">                                        doc.getLinkedDebitCardId().toString(), null)</span>
+<span class="fc" id="L207">                                .map(balance -&gt; toBalance(balance, doc.getCurrency()));</span>
                     }
-<span class="fc" id="L168">                    return Mono.just(toBalance(doc.getBalance(), doc.getCurrency()));</span>
+<span class="fc" id="L209">                    return Mono.just(toBalance(doc.getBalance(), doc.getCurrency()));</span>
                 });
     }
 
     private com.banking.wallet.dto.BalanceResponse toBalance(BigDecimal balance, String currency) {
-<span class="fc" id="L173">        com.banking.wallet.dto.BalanceResponse r = new com.banking.wallet.dto.BalanceResponse();</span>
-<span class="fc" id="L174">        r.setBalance(balance.toPlainString());</span>
-<span class="fc" id="L175">        r.setCurrency(currency);</span>
-<span class="fc" id="L176">        return r;</span>
+<span class="fc" id="L214">        com.banking.wallet.dto.BalanceResponse r = new com.banking.wallet.dto.BalanceResponse();</span>
+<span class="fc" id="L215">        r.setBalance(balance.toPlainString());</span>
+<span class="fc" id="L216">        r.setCurrency(currency);</span>
+<span class="fc" id="L217">        return r;</span>
     }
 
     private Mono&lt;Void&gt; publishEvent(String eventType, WalletDocument doc) {
-<span class="fc" id="L180">        WalletEvent event = WalletEvent.builder()</span>
-<span class="fc" id="L181">                .eventType(eventType)</span>
-<span class="fc" id="L182">                .walletId(doc.getWalletUuid())</span>
-<span class="fc" id="L183">                .phoneNumber(doc.getPhoneNumber())</span>
-<span class="fc" id="L184">                .occurredAt(Instant.now())</span>
-<span class="fc" id="L185">                .build();</span>
-<span class="fc" id="L186">        return eventPublisher.publish(event).onErrorResume(e -&gt; {</span>
-<span class="nc" id="L187">            log.warn(&quot;Failed to publish wallet event {}: {}&quot;, eventType, e.getMessage());</span>
-<span class="nc" id="L188">            return Mono.empty();</span>
+<span class="fc" id="L221">        WalletEvent event = WalletEvent.builder()</span>
+<span class="fc" id="L222">                .eventType(eventType)</span>
+<span class="fc" id="L223">                .walletId(doc.getWalletUuid())</span>
+<span class="fc" id="L224">                .phoneNumber(doc.getPhoneNumber())</span>
+<span class="fc" id="L225">                .occurredAt(Instant.now())</span>
+<span class="fc" id="L226">                .build();</span>
+<span class="fc" id="L227">        return eventPublisher.publish(event).onErrorResume(e -&gt; {</span>
+<span class="nc" id="L228">            log.warn(&quot;Failed to publish wallet event {}: {}&quot;, eventType, e.getMessage());</span>
+<span class="nc" id="L229">            return Mono.empty();</span>
         });
     }
 }

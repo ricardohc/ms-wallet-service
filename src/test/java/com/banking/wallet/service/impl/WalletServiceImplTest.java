@@ -10,9 +10,11 @@ import com.banking.wallet.client.TransactionServiceClient;
 import com.banking.wallet.document.WalletDocument;
 import com.banking.wallet.dto.WalletCreateRequest;
 import com.banking.wallet.dto.WalletTransferRequest;
+import com.banking.wallet.exception.BadRequestException;
 import com.banking.wallet.exception.WalletConflictException;
 import com.banking.wallet.exception.WalletForbiddenException;
 import com.banking.wallet.exception.WalletNotFoundException;
+import com.banking.wallet.exception.WalletUnprocessableException;
 import com.banking.wallet.event.WalletEventPublisher;
 import com.banking.wallet.mapper.WalletMapper;
 import com.banking.wallet.repository.WalletRepository;
@@ -76,6 +78,15 @@ class WalletServiceImplTest {
         return req;
     }
 
+    private WalletTransferRequest transferRequest(String target, String amount, String currency) {
+        WalletTransferRequest req = new WalletTransferRequest();
+        req.setSourcePhoneNumber("987654321");
+        req.setTargetPhoneNumber(target);
+        req.setAmount(amount);
+        req.setCurrency(currency);
+        return req;
+    }
+
     @Test
     void createValidWalletReturnsResponse() {
         when(repository.existsByDocumentTypeAndDocumentNumber(anyString(), anyString()))
@@ -117,23 +128,32 @@ class WalletServiceImplTest {
     }
 
     @Test
-    void transferWithoutJwtReturnsForbidden() {
-        WalletTransferRequest req = new WalletTransferRequest();
-        req.setTargetPhoneNumber("987654322");
-        req.setAmount("10.00");
-        req.setCurrency("PEN");
-
+    void transferWithoutSourcePhoneReturnsBadRequest() {
+        WalletTransferRequest req = transferRequest("987654322", "10.00", "PEN");
         StepVerifier.create(service.transfer(req, null, UUID.randomUUID()))
-                .expectError(WalletForbiddenException.class)
+                .expectError(BadRequestException.class)
+                .verify();
+    }
+
+    @Test
+    void transferWithSamePhoneReturnsBadRequest() {
+        WalletTransferRequest req = transferRequest("987654321", "10.00", "PEN");
+        StepVerifier.create(service.transfer(req, "987654321", UUID.randomUUID()))
+                .expectError(BadRequestException.class)
+                .verify();
+    }
+
+    @Test
+    void transferWithUnsupportedCurrencyReturnsBadRequest() {
+        WalletTransferRequest req = transferRequest("987654322", "10.00", "USD");
+        StepVerifier.create(service.transfer(req, "987654321", UUID.randomUUID()))
+                .expectError(BadRequestException.class)
                 .verify();
     }
 
     @Test
     void transferWithPhoneNotOwnedReturnsNotFound() {
-        WalletTransferRequest req = new WalletTransferRequest();
-        req.setTargetPhoneNumber("987654322");
-        req.setAmount("10.00");
-        req.setCurrency("PEN");
+        WalletTransferRequest req = transferRequest("987654322", "10.00", "PEN");
         when(repository.findByPhoneNumber(anyString())).thenReturn(Mono.empty());
 
         StepVerifier.create(service.transfer(req, "111111111", UUID.randomUUID()))
@@ -143,10 +163,7 @@ class WalletServiceImplTest {
 
     @Test
     void transferWithInactiveWalletReturnsForbidden() {
-        WalletTransferRequest req = new WalletTransferRequest();
-        req.setTargetPhoneNumber("987654322");
-        req.setAmount("10.00");
-        req.setCurrency("PEN");
+        WalletTransferRequest req = transferRequest("987654322", "10.00", "PEN");
         when(repository.findByPhoneNumber(anyString()))
                 .thenReturn(Mono.just(doc("INACTIVE")));
 
@@ -156,11 +173,21 @@ class WalletServiceImplTest {
     }
 
     @Test
+    void transferWithInsufficientFundsReturnsUnprocessable() {
+        WalletDocument source = doc("ACTIVE");
+        source.setBalance(new BigDecimal("5.00"));
+        when(repository.findByPhoneNumber(anyString())).thenReturn(Mono.just(source));
+
+        WalletTransferRequest req = transferRequest("987654322", "100.00", "PEN");
+
+        StepVerifier.create(service.transfer(req, "987654321", UUID.randomUUID()))
+                .expectError(WalletUnprocessableException.class)
+                .verify();
+    }
+
+    @Test
     void transferActiveWalletDelegatesToTransactionService() {
-        WalletTransferRequest req = new WalletTransferRequest();
-        req.setTargetPhoneNumber("987654322");
-        req.setAmount("10.00");
-        req.setCurrency("PEN");
+        WalletTransferRequest req = transferRequest("987654322", "10.00", "PEN");
         when(repository.findByPhoneNumber(anyString()))
                 .thenReturn(Mono.just(doc("ACTIVE")));
         UUID operationId = UUID.randomUUID();
