@@ -33,7 +33,6 @@ public class WalletDocument {
 
     private UUID walletUuid;
 
-    @Indexed(unique = true)
     private String documentType;
 
     @Indexed(unique = true)

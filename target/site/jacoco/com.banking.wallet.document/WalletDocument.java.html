@@ -18,50 +18,56 @@ import org.springframework.data.mongodb.core.mapping.Document;
 /**
  * Monedero Yanki. Persistencia propia del servicio (base banking_wallet,
  * coleccion wallets). Separado de los DTOs de contrato.
+ *
+ * Indices:
+ *  - Compuesto (documentType, documentNumber): no hay dos wallets con el
+ *    mismo tipo y numero de documento.
+ *  - Unico documentNumber: un numero de documento por wallet (global).
+ *  - Unico phoneNumber: un telefono por wallet.
  */
-<span class="pc bnc" id="L22" title="All 118 branches missed.">@Data</span>
-<span class="pc" id="L23">@Builder</span>
-<span class="nc" id="L24">@NoArgsConstructor</span>
-<span class="fc" id="L25">@AllArgsConstructor</span>
+<span class="pc bnc" id="L28" title="All 118 branches missed.">@Data</span>
+<span class="pc" id="L29">@Builder</span>
+<span class="nc" id="L30">@NoArgsConstructor</span>
+<span class="fc" id="L31">@AllArgsConstructor</span>
 @Document(collection = &quot;wallets&quot;)
-@CompoundIndex(name = &quot;uk_doc_type_doc_number&quot;, def = &quot;{'documentType': 1, 'documentNumber': 1}&quot;,
+@CompoundIndex(name = &quot;uk_doc_type_doc_number&quot;,
+        def = &quot;{'documentType': 1, 'documentNumber': 1}&quot;,
         unique = true)
 public class WalletDocument {
 
     @Id
-<span class="nc" id="L32">    private String id;</span>
+<span class="nc" id="L39">    private String id;</span>
 
-<span class="fc" id="L34">    private UUID walletUuid;</span>
+<span class="fc" id="L41">    private UUID walletUuid;</span>
 
-    @Indexed(unique = true)
-<span class="nc" id="L37">    private String documentType;</span>
-
-    @Indexed(unique = true)
-<span class="nc" id="L40">    private String documentNumber;</span>
+<span class="nc" id="L43">    private String documentType;</span>
 
     @Indexed(unique = true)
-<span class="fc" id="L43">    private String phoneNumber;</span>
+<span class="nc" id="L46">    private String documentNumber;</span>
 
-<span class="nc" id="L45">    private String imei;</span>
+    @Indexed(unique = true)
+<span class="fc" id="L49">    private String phoneNumber;</span>
 
-<span class="fc" id="L47">    private String email;</span>
+<span class="nc" id="L51">    private String imei;</span>
 
-<span class="fc" id="L49">    private String status;</span>
+<span class="fc" id="L53">    private String email;</span>
 
-<span class="fc" id="L51">    private UUID linkedDebitCardId;</span>
+<span class="fc" id="L55">    private String status;</span>
+
+<span class="fc" id="L57">    private UUID linkedDebitCardId;</span>
 
     /** Saldo propio del monedero. Con tarjeta vinculada se persiste siempre 0.00. */
-<span class="fc" id="L54">    private BigDecimal balance;</span>
+<span class="fc" id="L60">    private BigDecimal balance;</span>
 
-<span class="fc" id="L56">    private String currency;</span>
+<span class="fc" id="L62">    private String currency;</span>
 
     @CreatedDate
-<span class="nc" id="L59">    private Instant createdAt;</span>
+<span class="nc" id="L65">    private Instant createdAt;</span>
 
     @LastModifiedDate
-<span class="nc" id="L62">    private Instant updatedAt;</span>
+<span class="nc" id="L68">    private Instant updatedAt;</span>
 
     @Version
-<span class="nc" id="L65">    private Long version;</span>
+<span class="nc" id="L71">    private Long version;</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

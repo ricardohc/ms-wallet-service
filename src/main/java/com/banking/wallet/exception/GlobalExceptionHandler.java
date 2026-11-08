@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.support.WebExchangeBindException;
 import org.springframework.web.server.ServerWebExchange;
+import org.springframework.web.server.ServerWebInputException;
 import reactor.core.publisher.Mono;
 
 /**
@@ -28,6 +29,30 @@ public class GlobalExceptionHandler {
                 .toList();
         return build(HttpStatus.BAD_REQUEST, "WALLET-400", "Invalid request",
                 exchange, details);
+    }
+
+    /**
+     * Captura errores de conversion de parametros y de lectura del body:
+     *  - UUID invalido en header/path (X-Transaction-ID, walletId).
+     *  - JSON malformado o con tipos invalidos (UUID invalido en body,
+     *    campo con tipo incorrecto, etc).
+     * Mapea a 400 del contrato.
+     */
+    @ExceptionHandler(ServerWebInputException.class)
+    public Mono<ResponseEntity<ErrorResponse>> handleInput(
+            ServerWebInputException ex, ServerWebExchange exchange) {
+        Throwable cause = ex.getCause();
+        String detail = cause != null ? cause.getMessage() : ex.getReason();
+        if (detail == null) {
+            detail = "Invalid request parameter or body";
+        }
+        // Recortar mensajes muy largos de Jackson
+        if (detail.length() > 300) {
+            detail = detail.substring(0, 300) + "...";
+        }
+        log.warn("Input error: {}", detail);
+        return build(HttpStatus.BAD_REQUEST, "WALLET-400", detail,
+                exchange, List.of(detail));
     }
 
     @ExceptionHandler(WalletNotFoundException.class)
@@ -64,7 +89,7 @@ public class GlobalExceptionHandler {
     }
 
     private Mono<ResponseEntity<ErrorResponse>> build(HttpStatus status, String code,
-            String message, ServerWebExchange exchange, List<String> details) {
+                                                      String message, ServerWebExchange exchange, List<String> details) {
         ErrorResponse body = new ErrorResponse();
         body.setCode(code);
         body.setMessage(message);
