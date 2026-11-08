@@ -4,7 +4,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
+import com.banking.wallet.client.AccountBalanceClient;
 import com.banking.wallet.client.AccountValidationClient;
+import com.banking.wallet.client.TransactionServiceClient;
 import com.banking.wallet.document.WalletDocument;
 import com.banking.wallet.dto.WalletCreateRequest;
 import com.banking.wallet.dto.WalletTransferRequest;
@@ -14,8 +16,6 @@ import com.banking.wallet.exception.WalletNotFoundException;
 import com.banking.wallet.event.WalletEventPublisher;
 import com.banking.wallet.mapper.WalletMapper;
 import com.banking.wallet.repository.WalletRepository;
-import com.banking.wallet.service.AccountBalanceClient;
-import com.banking.wallet.service.TransactionServiceClient;
 import java.math.BigDecimal;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;

@@ -1,7 +1,4 @@
 GROUP,PACKAGE,CLASS,INSTRUCTION_MISSED,INSTRUCTION_COVERED,BRANCH_MISSED,BRANCH_COVERED,LINE_MISSED,LINE_COVERED,COMPLEXITY_MISSED,COMPLEXITY_COVERED,METHOD_MISSED,METHOD_COVERED
-ms-wallet-service,com.banking.wallet.service.impl,AccountBalanceClientImpl,31,0,4,0,7,0,5,0,3,0
-ms-wallet-service,com.banking.wallet.service.impl,ExternalServicesProperties,164,0,30,0,4,0,26,0,11,0
-ms-wallet-service,com.banking.wallet.service.impl,TransactionServiceClientImpl,16,0,0,0,5,0,3,0,3,0
 ms-wallet-service,com.banking.wallet.service.impl,WalletServiceImpl,137,265,5,11,27,57,13,21,10,16
 ms-wallet-service,com.banking.wallet.service,WalletTransferCommand,242,25,52,0,7,1,35,2,9,2
 ms-wallet-service,com.banking.wallet.service,WalletTransferCommand.WalletTransferCommandBuilder,22,44,0,0,0,1,2,7,2,7
@@ -10,6 +7,10 @@ ms-wallet-service,com.banking.wallet.event,WalletEvent.WalletEventBuilder,12,35,
 ms-wallet-service,com.banking.wallet.event,WalletEventPublisher,25,4,0,0,4,1,3,1,3,1
 ms-wallet-service,com.banking.wallet.config,KafkaProducerConfig,13,0,0,0,4,0,2,0,2,0
 ms-wallet-service,com.banking.wallet.config,SecurityConfig,15,0,0,0,5,0,3,0,3,0
+ms-wallet-service,com.banking.wallet.config,ExternalServicesProperties,164,0,30,0,4,0,26,0,11,0
+ms-wallet-service,com.banking.wallet.client.impl,TransactionServiceClientImpl,16,0,0,0,5,0,3,0,3,0
+ms-wallet-service,com.banking.wallet.client.impl,AccountBalanceClientImpl,31,0,4,0,7,0,5,0,3,0
+ms-wallet-service,com.banking.wallet.client.impl,AccountValidationClientImpl,141,0,6,0,29,0,9,0,6,0
 ms-wallet-service,com.banking.wallet.document,WalletDocument.WalletDocumentBuilder,60,80,0,0,0,1,6,11,6,11
 ms-wallet-service,com.banking.wallet.document,WalletDocument,575,74,118,0,8,10,84,10,25,10
 ms-wallet-service,com.banking.wallet.dto,WalletCreateRequest,204,34,18,0,41,15,20,10,11,10
@@ -22,7 +23,6 @@ ms-wallet-service,com.banking.wallet.dto,OperationAcceptedResponse,121,0,12,0,28
 ms-wallet-service,com.banking.wallet.dto,DocumentType,33,35,4,0,5,8,4,3,2,3
 ms-wallet-service,com.banking.wallet.dto,WalletStatus,33,28,4,0,5,7,4,3,2,3
 ms-wallet-service,com.banking.wallet.mapper,WalletMapper,0,68,0,0,0,22,0,4,0,4
-ms-wallet-service,com.banking.wallet.client,AccountValidationClient,116,4,6,0,26,1,8,1,5,1
 ms-wallet-service,com.banking.wallet.controller,WalletApiImpl,151,0,0,0,31,0,18,0,18,0
 ms-wallet-service,com.banking.wallet,WalletServiceApplication,8,0,0,0,3,0,2,0,2,0
 ms-wallet-service,com.banking.wallet.exception,WalletForbiddenException,0,4,0,0,0,2,0,1,0,1

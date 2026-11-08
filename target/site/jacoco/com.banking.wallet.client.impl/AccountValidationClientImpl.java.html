@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AccountValidationClientImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ms-wallet-service</a> &gt; <a href="index.source.html" class="el_package">com.banking.wallet.client.impl</a> &gt; <span class="el_source">AccountValidationClientImpl.java</span></div><h1>AccountValidationClientImpl.java</h1><pre class="source lang-java linenums">package com.banking.wallet.client.impl;
+
+import com.banking.wallet.client.AccountValidationClient;
+import com.banking.wallet.config.ExternalServicesProperties;
+import com.banking.wallet.exception.WalletConflictException;
+import com.banking.wallet.exception.WalletUnprocessableException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
+import reactor.core.publisher.Mono;
+
+/**
+ * Implementacion del cliente de validacion de cuentas contra ms-account-service.
+ * Verifica que el accountType no sea FIXED_TERM.
+ */
+@Component
+<span class="nc" id="L22">@RequiredArgsConstructor</span>
+<span class="nc" id="L23">@Slf4j</span>
+public class AccountValidationClientImpl implements AccountValidationClient {
+
+    private final WebClient.Builder webClientBuilder;
+    private final ObjectMapper objectMapper;
+    private final ExternalServicesProperties properties;
+
+    @Override
+    public Mono&lt;Void&gt; validateLinkableAccount(UUID accountId) {
+<span class="nc" id="L32">        String url = properties.getAccountBaseUrl() + &quot;/api/v1/accounts/&quot; + accountId;</span>
+<span class="nc" id="L33">        log.debug(&quot;Validating linked account {} against ms-account-service&quot;, accountId);</span>
+<span class="nc" id="L34">        return webClientBuilder.build()</span>
+<span class="nc" id="L35">                .get()</span>
+<span class="nc" id="L36">                .uri(url)</span>
+<span class="nc" id="L37">                .header(&quot;Accept&quot;, &quot;application/json&quot;)</span>
+                // Headers obligatorios exigidos por ms-account-service (OpenAPI)
+<span class="nc" id="L39">                .header(&quot;X-Correlation-ID&quot;, UUID.randomUUID().toString())</span>
+<span class="nc" id="L40">                .header(&quot;X-Channel-ID&quot;, &quot;MS-WALLET-SERVICE&quot;)</span>
+<span class="nc" id="L41">                .retrieve()</span>
+<span class="nc" id="L42">                .bodyToMono(String.class)</span>
+<span class="nc" id="L43">                .flatMap(body -&gt; {</span>
+                    try {
+<span class="nc" id="L45">                        JsonNode node = objectMapper.readTree(body);</span>
+<span class="nc" id="L46">                        String accountType = node.path(&quot;accountType&quot;).asText(null);</span>
+<span class="nc bnc" id="L47" title="All 2 branches missed.">                        if (&quot;FIXED_TERM&quot;.equals(accountType)) {</span>
+<span class="nc" id="L48">                            return Mono.error(new WalletConflictException(</span>
+                                    &quot;Fixed-term accounts are not compatible with wallet linking&quot;));
+                        }
+<span class="nc" id="L51">                        return Mono.empty();</span>
+<span class="nc" id="L52">                    } catch (Exception ex) {</span>
+<span class="nc" id="L53">                        log.error(&quot;Failed to parse account response: {}&quot;, ex.getMessage());</span>
+<span class="nc" id="L54">                        return Mono.error(new WalletUnprocessableException(</span>
+                                &quot;Unable to validate linked account&quot;));
+                    }
+                })
+<span class="nc" id="L58">                .onErrorResume(WebClientResponseException.NotFound.class,</span>
+<span class="nc" id="L59">                        ex -&gt; Mono.error(new WalletUnprocessableException(</span>
+                                &quot;Linked account not found: &quot; + accountId)))
+<span class="nc" id="L61">                .onErrorResume(ex -&gt; {</span>
+<span class="nc bnc" id="L62" title="All 4 branches missed.">                    if (ex instanceof WalletConflictException</span>
+                            || ex instanceof WalletUnprocessableException) {
+<span class="nc" id="L64">                        return Mono.error(ex);</span>
+                    }
+<span class="nc" id="L66">                    log.error(&quot;Failed to validate account {}: {}&quot;, accountId, ex.getMessage());</span>
+<span class="nc" id="L67">                    return Mono.error(new WalletUnprocessableException(</span>
+                            &quot;Unable to validate linked account: &quot; + accountId));
+                })
+<span class="nc" id="L70">                .then();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

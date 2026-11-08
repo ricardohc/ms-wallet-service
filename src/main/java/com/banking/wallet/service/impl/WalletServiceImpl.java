@@ -1,6 +1,8 @@
 package com.banking.wallet.service.impl;
 
+import com.banking.wallet.client.AccountBalanceClient;
 import com.banking.wallet.client.AccountValidationClient;
+import com.banking.wallet.client.TransactionServiceClient;
 import com.banking.wallet.document.WalletDocument;
 import com.banking.wallet.dto.WalletCreateRequest;
 import com.banking.wallet.dto.WalletResponse;
@@ -15,8 +17,6 @@ import com.banking.wallet.event.WalletEvent;
 import com.banking.wallet.event.WalletEventPublisher;
 import com.banking.wallet.mapper.WalletMapper;
 import com.banking.wallet.repository.WalletRepository;
-import com.banking.wallet.service.AccountBalanceClient;
-import com.banking.wallet.service.TransactionServiceClient;
 import com.banking.wallet.service.WalletService;
 import com.banking.wallet.service.WalletTransferCommand;
 import java.math.BigDecimal;

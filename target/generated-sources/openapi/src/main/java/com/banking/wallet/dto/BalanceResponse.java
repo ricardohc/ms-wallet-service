@@ -18,7 +18,7 @@ import jakarta.annotation.Generated;
  * BalanceResponse
  */
 
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-11-08T17:02:27.470471600-05:00[America/Lima]", comments = "Generator version: 7.6.0")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-11-08T17:28:25.351102900-05:00[America/Lima]", comments = "Generator version: 7.6.0")
 public class BalanceResponse {
 
   private String balance;
