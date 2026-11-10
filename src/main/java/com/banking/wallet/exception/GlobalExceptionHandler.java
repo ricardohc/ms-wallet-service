@@ -62,12 +62,6 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.CONFLICT, "WALLET-409", ex.getMessage(), exchange, null);
     }
 
-    @ExceptionHandler(WalletForbiddenException.class)
-    public Mono<ResponseEntity<ErrorResponse>> handleForbidden(
-            WalletForbiddenException ex, ServerWebExchange exchange) {
-        return build(HttpStatus.FORBIDDEN, "WALLET-403", ex.getMessage(), exchange, null);
-    }
-
     @ExceptionHandler(WalletUnprocessableException.class)
     public Mono<ResponseEntity<ErrorResponse>> handleUnprocessable(
             WalletUnprocessableException ex, ServerWebExchange exchange) {

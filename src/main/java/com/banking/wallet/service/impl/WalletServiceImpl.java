@@ -1,27 +1,24 @@
 package com.banking.wallet.service.impl;
 
-import com.banking.wallet.client.AccountBalanceClient;
-import com.banking.wallet.client.AccountValidationClient;
-import com.banking.wallet.client.TransactionServiceClient;
+import com.banking.wallet.document.AccountReferenceDocument;
 import com.banking.wallet.document.WalletDocument;
 import com.banking.wallet.dto.WalletCreateRequest;
 import com.banking.wallet.dto.WalletResponse;
 import com.banking.wallet.dto.WalletStatus;
-import com.banking.wallet.dto.WalletTransferRequest;
 import com.banking.wallet.dto.WalletUpdateRequest;
-import com.banking.wallet.exception.BadRequestException;
-import com.banking.wallet.exception.WalletConflictException;
-import com.banking.wallet.exception.WalletForbiddenException;
-import com.banking.wallet.exception.WalletNotFoundException;
-import com.banking.wallet.exception.WalletUnprocessableException;
 import com.banking.wallet.event.WalletEvent;
 import com.banking.wallet.event.WalletEventPublisher;
+import com.banking.wallet.exception.WalletConflictException;
+import com.banking.wallet.exception.WalletNotFoundException;
+import com.banking.wallet.exception.WalletUnprocessableException;
 import com.banking.wallet.mapper.WalletMapper;
+import com.banking.wallet.repository.AccountReferenceRepository;
 import com.banking.wallet.repository.WalletRepository;
 import com.banking.wallet.service.WalletService;
-import com.banking.wallet.service.WalletTransferCommand;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
+import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,43 +26,41 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
-/**
- * Logica de negocio del monedero Yanki.
- * Reglas: unicidad documento/telefono, saldo propio sin tarjeta (fuente de
- * verdad), con tarjeta balance local = 0.00 y fuente de verdad ms-account.
- */
+@Slf4j
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class WalletServiceImpl implements WalletService {
 
-    private static final String SUPPORTED_CURRENCY = "PEN";
+    /** Tipos de cuenta permitidos para vincular una tarjeta débito al wallet. */
+    private static final Set<String> ALLOWED_LINK_ACCOUNT_TYPES =
+            Set.of("SAVINGS", "CHECKED");
 
     private final WalletRepository repository;
+    private final AccountReferenceRepository accountReferenceRepository;
     private final WalletMapper mapper;
     private final WalletEventPublisher eventPublisher;
-    private final TransactionServiceClient transactionServiceClient;
-    private final AccountBalanceClient accountBalanceClient;
-    private final AccountValidationClient accountValidationClient;
 
     @Override
-    public Mono<WalletResponse> create(WalletCreateRequest request, UUID transactionId) {
+    public Mono<WalletResponse> create(WalletCreateRequest request, UUID transactionId,
+                                       String correlationId) {
         return repository.existsByDocumentTypeAndDocumentNumber(
                         request.getDocumentType().getValue(), request.getDocumentNumber())
                 .flatMap(exists -> exists
-                        ? Mono.error(new WalletConflictException(
+                        ? Mono.<Boolean>error(new WalletConflictException(
                         "Wallet already exists for document"))
                         : repository.existsByPhoneNumber(request.getPhoneNumber()))
                 .flatMap(phoneExists -> phoneExists
-                        ? Mono.error(new WalletConflictException(
+                        ? Mono.<WalletResponse>error(new WalletConflictException(
                         "Wallet already exists for phone number"))
-                        : persistNewWallet(request, transactionId))
+                        : persistNewWallet(request, transactionId, correlationId))
                 .onErrorResume(DuplicateKeyException.class,
                         e -> Mono.error(new WalletConflictException(
                                 "Wallet already exists for document or phone")));
     }
 
-    private Mono<WalletResponse> persistNewWallet(WalletCreateRequest request, UUID transactionId) {
+    private Mono<WalletResponse> persistNewWallet(WalletCreateRequest request,
+                                                  UUID transactionId,
+                                                  String correlationId) {
         WalletDocument doc = mapper.newWallet(
                 request.getDocumentType().getValue(),
                 request.getDocumentNumber(),
@@ -73,7 +68,7 @@ public class WalletServiceImpl implements WalletService {
                 request.getImei(),
                 request.getEmail());
         return repository.save(doc)
-                .flatMap(saved -> publishEvent("WalletCreated", saved)
+                .flatMap(saved -> publishEvent("i", saved, correlationId)
                         .thenReturn(mapper.toResponse(saved)))
                 .doOnSuccess(r -> log.info("Wallet created txId={}", transactionId));
     }
@@ -87,146 +82,87 @@ public class WalletServiceImpl implements WalletService {
 
     @Override
     public Mono<WalletResponse> update(UUID walletId, WalletUpdateRequest request,
-                                       UUID transactionId) {
+                                       UUID transactionId, String correlationId) {
         return repository.findByWalletUuid(walletId)
                 .switchIfEmpty(Mono.error(new WalletNotFoundException("Wallet not found")))
                 .flatMap(doc -> applyUpdate(doc, request))
                 .flatMap(repository::save)
-                .flatMap(saved -> publishEvent("WalletUpdated", saved)
+                .flatMap(saved -> publishEvent("u", saved, correlationId)
                         .thenReturn(mapper.toResponse(saved)));
     }
 
     private Mono<WalletDocument> applyUpdate(WalletDocument doc, WalletUpdateRequest request) {
+        // Validación de negocio: solo SAVINGS o CHECKED pueden vincularse.
+        Mono<Void> linkValidation = Mono.empty();
         if (request.getLinkedDebitCardId() != null) {
-            return accountValidationClient.validateLinkableAccount(request.getLinkedDebitCardId())
-                    .thenReturn(withLinkedCard(doc, request.getLinkedDebitCardId()));
+            linkValidation = validateLinkedAccountType(request.getLinkedDebitCardId());
         }
-        if (request.getStatus() != null) {
-            doc.setStatus(request.getStatus().getValue());
-        }
-        return Mono.just(doc);
+
+        return linkValidation.then(Mono.defer(() -> {
+            if (request.getLinkedDebitCardId() != null) {
+                doc.setLinkedDebitCardId(request.getLinkedDebitCardId());
+                doc.setBalance(new BigDecimal("0.00"));
+            }
+            if (request.getStatus() != null) {
+                doc.setStatus(request.getStatus().getValue());
+            }
+            return Mono.just(doc);
+        }));
     }
 
-    private WalletDocument withLinkedCard(WalletDocument doc, UUID cardId) {
-        doc.setLinkedDebitCardId(cardId);
-        doc.setBalance(new BigDecimal("0.00"));
-        return doc;
+    private Mono<Void> validateLinkedAccountType(UUID linkedDebitCardId) {
+        String accountId = linkedDebitCardId.toString();
+        return accountReferenceRepository.findById(accountId)
+                .switchIfEmpty(Mono.error(new WalletUnprocessableException(
+                        "Linked account not found in account_reference: " + accountId)))
+                .flatMap(this::assertAllowedAccountType)
+                .then();
+    }
+
+    private Mono<AccountReferenceDocument> assertAllowedAccountType(AccountReferenceDocument account) {
+        String type = account.getAccountType();
+        if (type == null || !ALLOWED_LINK_ACCOUNT_TYPES.contains(type)) {
+            log.warn("Rejecting link to account {} with accountType={}", account.getId(), type);
+            return Mono.error(new WalletUnprocessableException(
+                    "Account " + account.getId() + " has accountType=" + type
+                            + " not allowed for debit card linking. Allowed: SAVINGS, CHECKED"));
+        }
+        if (!"ACTIVE".equalsIgnoreCase(account.getStatus())) {
+            return Mono.error(new WalletUnprocessableException(
+                    "Linked account " + account.getId() + " is not ACTIVE"));
+        }
+        return Mono.just(account);
     }
 
     @Override
-    public Mono<Void> deactivate(UUID walletId, UUID transactionId) {
+    public Mono<Void> deactivate(UUID walletId, UUID transactionId, String correlationId) {
         return repository.findByWalletUuid(walletId)
                 .switchIfEmpty(Mono.error(new WalletNotFoundException("Wallet not found")))
                 .flatMap(doc -> {
                     doc.setStatus(WalletStatus.INACTIVE.getValue());
                     return repository.save(doc)
-                            .then(publishEvent("WalletDeactivated", doc));
+                            .flatMap(saved -> publishEvent("d", saved, correlationId));
                 });
     }
 
-    @Override
-    public Mono<UUID> transfer(WalletTransferRequest request, String sourcePhoneNumber,
-                               UUID transactionId) {
-        return Mono.defer(() -> {
-            // --- Validacion 1: moneda soportada -> 400 ---
-            if (request.getCurrency() == null
-                    || !SUPPORTED_CURRENCY.equalsIgnoreCase(request.getCurrency())) {
-                return Mono.error(new BadRequestException(
-                        "Unsupported currency. Only PEN is allowed"));
-            }
-
-            // --- Validacion 2: source no nulo -> 400 ---
-            if (sourcePhoneNumber == null || sourcePhoneNumber.isBlank()) {
-                return Mono.error(new BadRequestException(
-                        "Source phone number is required"));
-            }
-
-            // --- Validacion 3: source != target -> 400 ---
-            if (sourcePhoneNumber.equals(request.getTargetPhoneNumber())) {
-                return Mono.error(new BadRequestException(
-                        "Source phone number and target phone number cannot be the same"));
-            }
-
-            BigDecimal amount = new BigDecimal(request.getAmount());
-
-            // --- Buscamos el wallet origen ---
-            return repository.findByPhoneNumber(sourcePhoneNumber)
-                    .switchIfEmpty(Mono.error(new WalletNotFoundException(
-                            "Source wallet not found for phone number")))
-                    .flatMap(source -> {
-                        if (!WalletStatus.ACTIVE.getValue().equals(source.getStatus())) {
-                            return Mono.error(new WalletForbiddenException(
-                                    "Wallet is not active"));
-                        }
-
-                        // --- Validacion 4: fondos suficientes -> 422 ---
-                        Mono<BigDecimal> balanceMono;
-                        if (source.getLinkedDebitCardId() != null) {
-                            balanceMono = accountBalanceClient
-                                    .getPrimaryAccountBalance(source.getWalletUuid(),
-                                            source.getLinkedDebitCardId().toString(), null);
-                        } else {
-                            balanceMono = Mono.just(source.getBalance() == null
-                                    ? BigDecimal.ZERO : source.getBalance());
-                        }
-
-                        return balanceMono.flatMap(balance -> {
-                            if (balance.compareTo(amount) < 0) {
-                                return Mono.error(new WalletUnprocessableException(
-                                        "Insufficient funds in source wallet"));
-                            }
-                            return delegateTransfer(source, request, transactionId);
-                        });
-                    });
-        });
-    }
-
-    private Mono<UUID> delegateTransfer(WalletDocument source, WalletTransferRequest request,
-                                        UUID transactionId) {
-        WalletTransferCommand command = WalletTransferCommand.builder()
-                .transactionId(transactionId)
-                .sourceWalletId(source.getWalletUuid())
-                .targetPhoneNumber(request.getTargetPhoneNumber())
-                .amount(new BigDecimal(request.getAmount()))
-                .currency(request.getCurrency())
-                .build();
-        return transactionServiceClient.createTransfer(command);
-    }
-
-    @Override
-    public Mono<com.banking.wallet.dto.BalanceResponse> findBalance(
-            String authenticatedPhoneNumber) {
-        return repository.findByPhoneNumber(authenticatedPhoneNumber)
-                .switchIfEmpty(Mono.error(new WalletNotFoundException(
-                        "Wallet not found for phone number")))
-                .flatMap(doc -> {
-                    if (doc.getLinkedDebitCardId() != null) {
-                        return accountBalanceClient
-                                .getPrimaryAccountBalance(doc.getWalletUuid(),
-                                        doc.getLinkedDebitCardId().toString(), null)
-                                .map(balance -> toBalance(balance, doc.getCurrency()));
-                    }
-                    return Mono.just(toBalance(doc.getBalance(), doc.getCurrency()));
-                });
-    }
-
-    private com.banking.wallet.dto.BalanceResponse toBalance(BigDecimal balance, String currency) {
-        com.banking.wallet.dto.BalanceResponse r = new com.banking.wallet.dto.BalanceResponse();
-        r.setBalance(balance.toPlainString());
-        r.setCurrency(currency);
-        return r;
-    }
-
-    private Mono<Void> publishEvent(String eventType, WalletDocument doc) {
+    private Mono<Void> publishEvent(String eventType, WalletDocument doc, String correlationId) {
         WalletEvent event = WalletEvent.builder()
+                .eventId(UUID.randomUUID().toString())
                 .eventType(eventType)
-                .walletId(doc.getWalletUuid())
-                .phoneNumber(doc.getPhoneNumber())
-                .occurredAt(Instant.now())
+                .occurredAt(nowEpochSeconds())
+                .correlationId(correlationId)
+                .payload(mapper.toEventPayload(doc))
                 .build();
         return eventPublisher.publish(event).onErrorResume(e -> {
             log.warn("Failed to publish wallet event {}: {}", eventType, e.getMessage());
             return Mono.empty();
         });
+    }
+
+    private BigDecimal nowEpochSeconds() {
+        Instant now = Instant.now();
+        return BigDecimal.valueOf(now.getEpochSecond())
+                .add(BigDecimal.valueOf(now.getNano(), 9))
+                .setScale(9, RoundingMode.HALF_UP);
     }
 }

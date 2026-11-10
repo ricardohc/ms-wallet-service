@@ -15,10 +15,6 @@ import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-/**
- * Monedero Yanki. Persistencia propia del servicio (base banking_wallet,
- * coleccion wallets). Separado de los DTOs de contrato.
- */
 @Data
 @Builder
 @NoArgsConstructor
@@ -49,7 +45,6 @@ public class WalletDocument {
 
     private UUID linkedDebitCardId;
 
-    /** Saldo propio del monedero. Con tarjeta vinculada se persiste siempre 0.00. */
     private BigDecimal balance;
 
     private String currency;

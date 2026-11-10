@@ -9,7 +9,7 @@ spring:
 
   data:
     mongodb:
-      uri: ${MONGODB_URI:mongodb://localhost:27017/banking_yanki}
+      uri: ${MONGODB_URI:mongodb://localhost:27017/banking_wallet}
       auto-index-creation: true
 
   kafka:
@@ -18,6 +18,15 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       acks: all
+      properties:
+        spring.json.add.type.headers: false
+    consumer:
+      group-id: wallet-service-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
 
   security:
     oauth2:
@@ -45,12 +54,6 @@ springdoc:
     path: /v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
-
-external:
-  services:
-    account-base-url: ${ACCOUNT_SERVICE_URL:http://localhost:8082}
-    card-base-url: ${CARD_SERVICE_URL:http://localhost:8084}
-    transaction-base-url: ${TRANSACTION_SERVICE_URL:http://localhost:8083}
 
 logging:
   level:

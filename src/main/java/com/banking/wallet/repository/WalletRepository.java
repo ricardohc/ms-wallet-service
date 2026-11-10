@@ -5,10 +5,6 @@ import java.util.UUID;
 import org.springframework.data.repository.reactive.ReactiveCrudRepository;
 import reactor.core.publisher.Mono;
 
-/**
- * Repositorio reactivo de wallets. Escritura directa a MongoDB propia
- * (banking_wallet.wallets). Metodos derivados, sin @Query.
- */
 public interface WalletRepository extends ReactiveCrudRepository<WalletDocument, String> {
 
     Mono<WalletDocument> findByWalletUuid(UUID walletUuid);

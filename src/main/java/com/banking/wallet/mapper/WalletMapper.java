@@ -2,14 +2,11 @@ package com.banking.wallet.mapper;
 
 import com.banking.wallet.document.WalletDocument;
 import com.banking.wallet.dto.WalletResponse;
+import com.banking.wallet.event.WalletEvent;
 import java.math.BigDecimal;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
 
-/**
- * Mapea WalletDocument a DTOs de contrato. Nunca expone campos internos
- * adicionales al contrato OpenAPI.
- */
 @Component
 public class WalletMapper {
 
@@ -46,5 +43,21 @@ public class WalletMapper {
 
     public WalletResponse toResponse(WalletDocument doc) {
         return toResponse(doc, doc.getBalance().toPlainString());
+    }
+
+    public WalletEvent.WalletPayload toEventPayload(WalletDocument doc) {
+        return WalletEvent.WalletPayload.builder()
+                .id(doc.getWalletUuid())
+                .documentType(doc.getDocumentType())
+                .documentNumber(doc.getDocumentNumber())
+                .phoneNumber(doc.getPhoneNumber())
+                .imei(doc.getImei())
+                .email(doc.getEmail())
+                .status(doc.getStatus())
+                .linkedDebitCardId(doc.getLinkedDebitCardId())
+                .balance(doc.getBalance() != null ? doc.getBalance().toPlainString() : "0.00")
+                .currency(doc.getCurrency())
+                .createdAt(doc.getCreatedAt())
+                .build();
     }
 }

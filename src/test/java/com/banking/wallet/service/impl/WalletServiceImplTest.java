@@ -4,19 +4,16 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
-import com.banking.wallet.client.AccountBalanceClient;
-import com.banking.wallet.client.AccountValidationClient;
-import com.banking.wallet.client.TransactionServiceClient;
+import com.banking.wallet.document.AccountReferenceDocument;
 import com.banking.wallet.document.WalletDocument;
 import com.banking.wallet.dto.WalletCreateRequest;
-import com.banking.wallet.dto.WalletTransferRequest;
-import com.banking.wallet.exception.BadRequestException;
-import com.banking.wallet.exception.WalletConflictException;
-import com.banking.wallet.exception.WalletForbiddenException;
-import com.banking.wallet.exception.WalletNotFoundException;
-import com.banking.wallet.exception.WalletUnprocessableException;
+import com.banking.wallet.dto.WalletStatus;
+import com.banking.wallet.dto.WalletUpdateRequest;
 import com.banking.wallet.event.WalletEventPublisher;
+import com.banking.wallet.exception.WalletConflictException;
+import com.banking.wallet.exception.WalletUnprocessableException;
 import com.banking.wallet.mapper.WalletMapper;
+import com.banking.wallet.repository.AccountReferenceRepository;
 import com.banking.wallet.repository.WalletRepository;
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -28,37 +25,27 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-/** Pruebas unitarias de reglas de negocio del monedero (reactor-test). */
 @ExtendWith(MockitoExtension.class)
 class WalletServiceImplTest {
 
-    @Mock
-    private WalletRepository repository;
-
-    @Mock
-    private WalletEventPublisher eventPublisher;
-
-    @Mock
-    private TransactionServiceClient transactionServiceClient;
-
-    @Mock
-    private AccountBalanceClient accountBalanceClient;
-
-    @Mock
-    private AccountValidationClient accountValidationClient;
+    @Mock private WalletRepository repository;
+    @Mock private AccountReferenceRepository accountReferenceRepository;
+    @Mock private WalletEventPublisher eventPublisher;
 
     private WalletServiceImpl service;
 
+    private final UUID walletUuid = UUID.randomUUID();
+    private final UUID cardUuid = UUID.randomUUID();
+
     @BeforeEach
     void setUp() {
-        service = new WalletServiceImpl(repository, new WalletMapper(),
-                eventPublisher, transactionServiceClient, accountBalanceClient,
-                accountValidationClient);
+        service = new WalletServiceImpl(repository, accountReferenceRepository,
+                new WalletMapper(), eventPublisher);
     }
 
     private WalletDocument doc(String status) {
         return WalletDocument.builder()
-                .walletUuid(UUID.randomUUID())
+                .walletUuid(walletUuid)
                 .documentType("DNI")
                 .documentNumber("12345678")
                 .phoneNumber("987654321")
@@ -78,13 +65,12 @@ class WalletServiceImplTest {
         return req;
     }
 
-    private WalletTransferRequest transferRequest(String target, String amount, String currency) {
-        WalletTransferRequest req = new WalletTransferRequest();
-        req.setSourcePhoneNumber("987654321");
-        req.setTargetPhoneNumber(target);
-        req.setAmount(amount);
-        req.setCurrency(currency);
-        return req;
+    private AccountReferenceDocument account(String type, String status) {
+        return AccountReferenceDocument.builder()
+                .id(cardUuid.toString())
+                .accountType(type)
+                .status(status)
+                .build();
     }
 
     @Test
@@ -96,7 +82,7 @@ class WalletServiceImplTest {
                 .thenReturn(Mono.just(doc("ACTIVE")));
         when(eventPublisher.publish(any())).thenReturn(Mono.empty());
 
-        StepVerifier.create(service.create(createRequest(), UUID.randomUUID()))
+        StepVerifier.create(service.create(createRequest(), UUID.randomUUID(), "corr-1"))
                 .assertNext(r -> {
                     org.junit.jupiter.api.Assertions.assertEquals("987654321",
                             r.getPhoneNumber());
@@ -111,7 +97,7 @@ class WalletServiceImplTest {
         when(repository.existsByDocumentTypeAndDocumentNumber(anyString(), anyString()))
                 .thenReturn(Mono.just(true));
 
-        StepVerifier.create(service.create(createRequest(), UUID.randomUUID()))
+        StepVerifier.create(service.create(createRequest(), UUID.randomUUID(), "corr-1"))
                 .expectError(WalletConflictException.class)
                 .verify();
     }
@@ -122,110 +108,58 @@ class WalletServiceImplTest {
                 .thenReturn(Mono.just(false));
         when(repository.existsByPhoneNumber(anyString())).thenReturn(Mono.just(true));
 
-        StepVerifier.create(service.create(createRequest(), UUID.randomUUID()))
+        StepVerifier.create(service.create(createRequest(), UUID.randomUUID(), "corr-1"))
                 .expectError(WalletConflictException.class)
                 .verify();
     }
 
     @Test
-    void transferWithoutSourcePhoneReturnsBadRequest() {
-        WalletTransferRequest req = transferRequest("987654322", "10.00", "PEN");
-        StepVerifier.create(service.transfer(req, null, UUID.randomUUID()))
-                .expectError(BadRequestException.class)
-                .verify();
+    void linkSavingsAccountIsAccepted() {
+        WalletDocument existing = doc("ACTIVE");
+        when(repository.findByWalletUuid(walletUuid)).thenReturn(Mono.just(existing));
+        when(accountReferenceRepository.findById(cardUuid.toString()))
+                .thenReturn(Mono.just(account("SAVINGS", "ACTIVE")));
+        when(repository.save(any(WalletDocument.class)))
+                .thenAnswer(inv -> Mono.just(inv.getArgument(0)));
+        when(eventPublisher.publish(any())).thenReturn(Mono.empty());
+
+        WalletUpdateRequest req = new WalletUpdateRequest();
+        req.setLinkedDebitCardId(cardUuid);
+        req.setStatus(WalletStatus.ACTIVE);
+
+        StepVerifier.create(service.update(walletUuid, req, UUID.randomUUID(), "corr-1"))
+                .assertNext(r -> org.junit.jupiter.api.Assertions.assertEquals(
+                        cardUuid, r.getLinkedDebitCardId()))
+                .verifyComplete();
     }
 
     @Test
-    void transferWithSamePhoneReturnsBadRequest() {
-        WalletTransferRequest req = transferRequest("987654321", "10.00", "PEN");
-        StepVerifier.create(service.transfer(req, "987654321", UUID.randomUUID()))
-                .expectError(BadRequestException.class)
-                .verify();
-    }
+    void linkFixTermAccountIsRejected() {
+        WalletDocument existing = doc("ACTIVE");
+        when(repository.findByWalletUuid(walletUuid)).thenReturn(Mono.just(existing));
+        when(accountReferenceRepository.findById(cardUuid.toString()))
+                .thenReturn(Mono.just(account("FIX_TERM", "ACTIVE")));
 
-    @Test
-    void transferWithUnsupportedCurrencyReturnsBadRequest() {
-        WalletTransferRequest req = transferRequest("987654322", "10.00", "USD");
-        StepVerifier.create(service.transfer(req, "987654321", UUID.randomUUID()))
-                .expectError(BadRequestException.class)
-                .verify();
-    }
+        WalletUpdateRequest req = new WalletUpdateRequest();
+        req.setLinkedDebitCardId(cardUuid);
 
-    @Test
-    void transferWithPhoneNotOwnedReturnsNotFound() {
-        WalletTransferRequest req = transferRequest("987654322", "10.00", "PEN");
-        when(repository.findByPhoneNumber(anyString())).thenReturn(Mono.empty());
-
-        StepVerifier.create(service.transfer(req, "111111111", UUID.randomUUID()))
-                .expectError(WalletNotFoundException.class)
-                .verify();
-    }
-
-    @Test
-    void transferWithInactiveWalletReturnsForbidden() {
-        WalletTransferRequest req = transferRequest("987654322", "10.00", "PEN");
-        when(repository.findByPhoneNumber(anyString()))
-                .thenReturn(Mono.just(doc("INACTIVE")));
-
-        StepVerifier.create(service.transfer(req, "987654321", UUID.randomUUID()))
-                .expectError(WalletForbiddenException.class)
-                .verify();
-    }
-
-    @Test
-    void transferWithInsufficientFundsReturnsUnprocessable() {
-        WalletDocument source = doc("ACTIVE");
-        source.setBalance(new BigDecimal("5.00"));
-        when(repository.findByPhoneNumber(anyString())).thenReturn(Mono.just(source));
-
-        WalletTransferRequest req = transferRequest("987654322", "100.00", "PEN");
-
-        StepVerifier.create(service.transfer(req, "987654321", UUID.randomUUID()))
+        StepVerifier.create(service.update(walletUuid, req, UUID.randomUUID(), "corr-1"))
                 .expectError(WalletUnprocessableException.class)
                 .verify();
     }
 
     @Test
-    void transferActiveWalletDelegatesToTransactionService() {
-        WalletTransferRequest req = transferRequest("987654322", "10.00", "PEN");
-        when(repository.findByPhoneNumber(anyString()))
-                .thenReturn(Mono.just(doc("ACTIVE")));
-        UUID operationId = UUID.randomUUID();
-        when(transactionServiceClient.createTransfer(any()))
-                .thenReturn(Mono.just(operationId));
+    void linkUnknownAccountIsRejected() {
+        WalletDocument existing = doc("ACTIVE");
+        when(repository.findByWalletUuid(walletUuid)).thenReturn(Mono.just(existing));
+        when(accountReferenceRepository.findById(cardUuid.toString()))
+                .thenReturn(Mono.empty());
 
-        StepVerifier.create(service.transfer(req, "987654321", UUID.randomUUID()))
-                .expectNext(operationId)
-                .verifyComplete();
-    }
+        WalletUpdateRequest req = new WalletUpdateRequest();
+        req.setLinkedDebitCardId(cardUuid);
 
-    @Test
-    void balanceWithoutCardUsesOwnBalance() {
-        when(repository.findByPhoneNumber(anyString()))
-                .thenReturn(Mono.just(doc("ACTIVE")));
-
-        StepVerifier.create(service.findBalance("987654321"))
-                .assertNext(r -> {
-                    org.junit.jupiter.api.Assertions.assertEquals("50.00",
-                            r.getBalance());
-                    org.junit.jupiter.api.Assertions.assertEquals("PEN",
-                            r.getCurrency());
-                })
-                .verifyComplete();
-    }
-
-    @Test
-    void balanceWithCardQueriesAccountService() {
-        WalletDocument withCard = doc("ACTIVE");
-        withCard.setLinkedDebitCardId(UUID.randomUUID());
-        when(repository.findByPhoneNumber(anyString()))
-                .thenReturn(Mono.just(withCard));
-        when(accountBalanceClient.getPrimaryAccountBalance(any(), anyString(), any()))
-                .thenReturn(Mono.just(new BigDecimal("100.50")));
-
-        StepVerifier.create(service.findBalance("987654321"))
-                .assertNext(r -> org.junit.jupiter.api.Assertions.assertEquals("100.50",
-                        r.getBalance()))
-                .verifyComplete();
+        StepVerifier.create(service.update(walletUuid, req, UUID.randomUUID(), "corr-1"))
+                .expectError(WalletUnprocessableException.class)
+                .verify();
     }
 }
